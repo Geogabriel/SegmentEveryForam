@@ -17,7 +17,7 @@ import shapely
 import skimage
 from tqdm import tqdm
 # Local imports
-import segmenteverygrain
+import segmenteveryforam
 
 # Images larger than this will be downscaled
 # 4k resolution is (2160, 4096)
@@ -1443,7 +1443,7 @@ def predict_from_prompts(predictor, box=None, points=None, point_labels=None):
     
     if touches_edge:
         # Pad the mask with 1 pixel border to allow proper contour detection
-        # This is the same technique used in segmenteverygrain.one_point_prompt
+        # This is the same technique used in segmenteveryforam.one_point_prompt
         mask = np.pad(mask, 1, mode="constant")
         contours = skimage.measure.find_contours(mask.astype(float), 0.5)
         if len(contours) == 0:
@@ -1531,7 +1531,7 @@ def load_grains(fn: str, image: np.ndarray = None) -> list:
     grains : list
         List of Grain objects.
     '''
-    grains = polygons_to_grains(segmenteverygrain.read_polygons(fn), image)
+    grains = polygons_to_grains(segmenteveryforam.read_polygons(fn), image)
     return grains
 
 
@@ -1546,7 +1546,7 @@ def save_grains(fn: str, grains: list):
     grains : list
         List of grains to write to disk.
     '''
-    segmenteverygrain.save_polygons([g.polygon for g in grains], fn)
+    segmenteveryforam.save_polygons([g.polygon for g in grains], fn)
 
 
 def get_summary(grains: list, px_per_m: float = 1.) -> pd.DataFrame:
@@ -1629,7 +1629,7 @@ def get_histogram(
     else:
         area = []
     # plot_histogram_of_axis_lengths() takes values in mm, not m
-    ret = segmenteverygrain.plot_histogram_of_axis_lengths(
+    ret = segmenteveryforam.plot_histogram_of_axis_lengths(
         summary['major_axis_length'] * 1000,
         summary['minor_axis_length'] * 1000,
         area=area)
@@ -1683,7 +1683,7 @@ def get_mask(grains: list, image: np.ndarray) -> np.ndarray:
         Binary mask image.
     '''
     polys = [g.polygon for g in grains]
-    rasterized_image, mask = segmenteverygrain.create_labeled_image(
+    rasterized_image, mask = segmenteveryforam.create_labeled_image(
         polys, image)
     return keras.utils.img_to_array(mask)
 

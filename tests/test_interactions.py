@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import shapely
 # Local imports
-import segmenteverygrain as seg
-import segmenteverygrain.interactions as si
+import segmenteveryforam as sef
+import segmenteveryforam.interactions as sfi
 
 
 # Geometry calculations
@@ -94,7 +94,7 @@ class TestPolygonMeasurement(unittest.TestCase):
 
     def test_measure_polygon(self):
         for poly in self.polygons:
-            data = si.measure_polygon(poly)
+            data = sfi.measure_polygon(poly)
             # Check the centroid
             self.assertEqual(data['centroid'], poly.centroid.xy[::-1])
             # Check the area
@@ -103,7 +103,7 @@ class TestPolygonMeasurement(unittest.TestCase):
     def test_measure_ellipse(self):
         for poly in self.polygons:
             # Get ellipse metrics
-            data = si.measure_ellipse(si.measure_polygon(poly))
+            data = sfi.measure_ellipse(sfi.measure_polygon(poly))
             # Check that the orientation matches the minimum rotated rectangle
             angle = azimuth(poly.oriented_envelope)
             self.assertEqual(data['orientation'], angle)
@@ -111,7 +111,7 @@ class TestPolygonMeasurement(unittest.TestCase):
     def test_measure_color(self):
         for poly in self.polygons:
             # Get color metrics
-            data = si.measure_color(self.image, poly)
+            data = sfi.measure_color(self.image, poly)
             # Check the mean color intensities
             r, g, b = self.rgb
             self.assertEqual(data['mean_intensity-0'], r)
@@ -145,7 +145,7 @@ class TestGrainObject(unittest.TestCase):
         cls.polygons = [shapely.Polygon(p.get_xy()) for p in cls.patches]
 
         # Create and draw Grain objects from polygons
-        cls.grains = si.polygons_to_grains(cls.polygons, image=cls.image)
+        cls.grains = sfi.polygons_to_grains(cls.polygons, image=cls.image)
         for grain in cls.grains:
             grain.measure()
             grain.draw_patch(cls.ax)
@@ -155,7 +155,7 @@ class TestGrainObject(unittest.TestCase):
         self.assertEqual(len(self.grains), len(self.patches))
         # Check the type of grains
         for grain in self.grains:
-            self.assertIsInstance(grain, si.Grain)
+            self.assertIsInstance(grain, sfi.Grain)
 
     def test_drawing(self):
         for grain, patch in zip(self.grains, self.patches):
@@ -193,11 +193,11 @@ class TestGrainPlot(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.image = si.load_image('examples/torrey_pines.jpg')
-        cls.grains = si.load_grains(
+        cls.image = sfi.load_image('examples/torrey_pines.jpg')
+        cls.grains = sfi.load_grains(
             'examples/interactive_edit/torrey_pines_grains.geojson',
             image=cls.image)
-        cls.plot = si.GrainPlot(cls.grains, cls.image)
+        cls.plot = sfi.GrainPlot(cls.grains, cls.image)
 
     def test_create_plot(self):
         # Check if the plot is created
@@ -225,14 +225,14 @@ class TestDownscaledGrainPlot(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.image = si.load_image('examples/torrey_pines.jpg')
-        cls.grains = si.load_grains(
+        cls.image = sfi.load_image('examples/torrey_pines.jpg')
+        cls.grains = sfi.load_grains(
             'examples/interactive_edit/torrey_pines_grains.geojson',
             image=cls.image)
         cls.testdata = cls.grains[0].measure()
         cls.testxy = cls.grains[0].xy
         cls.max_dim = 320
-        cls.plot = si.GrainPlot(
+        cls.plot = sfi.GrainPlot(
             cls.grains, cls.image, image_max_size=(cls.max_dim, cls.max_dim))
 
     def test_create_plot(self):

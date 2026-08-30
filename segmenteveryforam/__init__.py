@@ -1,5 +1,5 @@
 """
-segmenteverygrain: A Python package for automated grain segmentation using SAM and U-Net.
+segmenteveryforam: A Python package for automated grain segmentation using SAM and U-Net.
 
 This package provides tools for:
 - Semantic segmentation of grains using U-Net
@@ -9,7 +9,7 @@ This package provides tools for:
 """
 
 # Core segmentation functionality
-from .segmenteverygrain import *
+from .segmenteveryforam import *
 
 # Interactive editing tools
 from .interactions import (
@@ -40,4 +40,4 @@ from .grain_utils import (
     extract_color_features,
 )
 
-__version__ = "0.5.0"
+__version__ = "0.1.0"
