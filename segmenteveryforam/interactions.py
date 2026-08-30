@@ -233,7 +233,7 @@ class Grain(object):
         ax : matplotlib.Axes
             Axes instance on which to draw the grain properties.
         scale : float
-            Scaling factor, useful with downscaled GrainPlots.
+            Scaling factor, useful with downscaled ForamPlots.
 
         Returns
         -------
@@ -270,7 +270,7 @@ class Grain(object):
         ax : matplotlib.Axes
             Axes instance on which to draw this grain.
         scale : float
-            Scaling factor, useful with downscaled GrainPlots.
+            Scaling factor, useful with downscaled ForamPlots.
         animated : bool
             Whether the patch should be animated (for blitting). Set to False
             for environments that don't support blitting (e.g., Colab).
@@ -300,7 +300,7 @@ class Grain(object):
         return patch
 
 
-class GrainPlot(object):
+class ForamPlot(object):
     ''' 
     Interactive plot to create, delete, and merge grains.
     
@@ -375,7 +375,7 @@ class GrainPlot(object):
         kwargs : dict
             Keyword arguments to pass to plt.figure().
         '''
-        logger.info('Creating GrainPlot...')
+        logger.info('Creating ForamPlot...')
         
         # Store color palette and color_by selection for later use
         self.color_palette = color_palette
@@ -506,12 +506,12 @@ class GrainPlot(object):
         
         # Add keyboard shortcuts to the window title
         shortcuts_title = (
-            'GrainPlot | Click=Auto-create, Alt+Click=Multi-prompt, Shift+Drag=Scale, '
+            'ForamPlot | Click=Auto-create, Alt+Click=Multi-prompt, Shift+Drag=Scale, '
             'D=Delete, M=Merge, Z=Undo, H=Coverage, Esc=Clear, Ctrl=Hide'
         )
         self.fig.canvas.manager.set_window_title(shortcuts_title)
         
-        logger.info('GrainPlot created!')
+        logger.info('ForamPlot created!')
 
     # Color generation -------------------------------------------------------
     def _generate_colors(self, n_grains: int, cmap_name: str) -> list:
@@ -1392,7 +1392,8 @@ class GrainPlot(object):
             Filename for output image. File type is determined by extension.
         '''
         self.fig.savefig(fn, bbox_inches='tight', pad_inches=0)
-
+# Backward-compatible alias for code written against Segmenteverygrain.
+GrainPlot = ForamPlot
 def predict_from_prompts(predictor, box=None, points=None, point_labels=None):
     """
     Perform a point-prompt-based segmentation using the SAM model. 

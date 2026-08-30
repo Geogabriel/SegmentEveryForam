@@ -1,11 +1,12 @@
 """
-segmenteveryforam: A Python package for automated grain segmentation using SAM and U-Net.
+segmenteveryforam: A Python package for automated foraminifera segmentation
+and image-based analysis using U-Net and SAM.
 
 This package provides tools for:
-- Semantic segmentation of grains using U-Net
+- Semantic segmentation of foraminifera using U-Net
 - Instance segmentation using the Segment Anything Model (SAM)
-- Interactive editing of grain segmentations
-- Extraction of individual grain images for analysis
+- Interactive editing of foraminiferal segmentations
+- Extraction of individual foraminifera images for analysis
 """
 
 # Core segmentation functionality
@@ -13,6 +14,7 @@ from .segmenteveryforam import *
 
 # Interactive editing tools
 from .interactions import (
+    ForamPlot,
     GrainPlot,
     Grain,
     load_image,
@@ -24,7 +26,7 @@ from .interactions import (
     get_summary,
 )
 
-# Grain extraction utilities
+# Foraminifera extraction utilities
 from .grain_utils import (
     extract_grain_image,
     extract_all_grains,
