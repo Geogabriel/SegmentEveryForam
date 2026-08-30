@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon as MplPolygon
 from PIL import Image
 from shapely.geometry import Polygon
-import segmenteverygrain as seg
+import segmenteveryforam as sef
 import tensorflow as tf
 
 
@@ -27,7 +27,7 @@ class TestGetGrainsFromPatches(unittest.TestCase):
         plt.axis("equal")
 
     def test_get_grains_from_patches(self):
-        all_grains, rasterized, mask_all = seg.get_grains_from_patches(
+        all_grains, rasterized, mask_all = sef.get_grains_from_patches(
             self.ax, self.image
         )
 
@@ -61,20 +61,20 @@ class TestRasterizeGrains(unittest.TestCase):
         ]
 
     def test_rasterize_grains_shape(self):
-        rasterized = seg.rasterize_grains(self.grains, self.image)
+        rasterized = sef.rasterize_grains(self.grains, self.image)
         self.assertEqual(rasterized.shape, self.image.shape[:2])
 
     def test_rasterize_grains_labels(self):
-        rasterized = seg.rasterize_grains(self.grains, self.image)
+        rasterized = sef.rasterize_grains(self.grains, self.image)
         unique_labels = np.unique(rasterized)
         self.assertTrue(set(unique_labels).issubset({0, 1, 2}))
 
     def test_rasterize_grains_nonzero(self):
-        rasterized = seg.rasterize_grains(self.grains, self.image)
+        rasterized = sef.rasterize_grains(self.grains, self.image)
         self.assertTrue(np.any(rasterized > 0))
 
     def test_rasterize_grains_label_positions(self):
-        rasterized = seg.rasterize_grains(self.grains, self.image)
+        rasterized = sef.rasterize_grains(self.grains, self.image)
         self.assertEqual(rasterized[15, 15], 1)
         self.assertEqual(rasterized[35, 35], 2)
 
@@ -90,7 +90,7 @@ class TestPredictImageTile(unittest.TestCase):
 
     def test_predict_image_tile_3d(self):
         im_tile = np.zeros((256, 256, 3))
-        im_tile_pred = seg.predict_image_tile(im_tile, self.model)
+        im_tile_pred = sef.predict_image_tile(im_tile, self.model)
         self.assertEqual(im_tile_pred.shape, (256, 256, 3))
         # Mock returns all-ones logits; softmax converts to uniform 1/3 probabilities
         self.assertTrue(np.allclose(im_tile_pred, 1.0 / 3.0))
@@ -98,7 +98,7 @@ class TestPredictImageTile(unittest.TestCase):
     def test_predict_image_tile_invalid_input(self):
         im_tile = np.zeros((256,))
         with self.assertRaises(ValueError):
-            seg.predict_image_tile(im_tile, self.model)
+            sef.predict_image_tile(im_tile, self.model)
 
 
 class TestPredictImage(unittest.TestCase):
@@ -112,20 +112,20 @@ class TestPredictImage(unittest.TestCase):
 
     def test_predict_image_2d(self):
         big_im = np.zeros((512, 512))
-        big_im_pred = seg.predict_image(big_im, self.model, 256)
+        big_im_pred = sef.predict_image(big_im, self.model, 256)
         self.assertEqual(big_im_pred.shape, (512, 512, 3))
         self.assertTrue(np.all(big_im_pred > 0))
 
     def test_predict_image_3d(self):
         big_im = np.zeros((512, 512, 3))
-        big_im_pred = seg.predict_image(big_im, self.model, 256)
+        big_im_pred = sef.predict_image(big_im, self.model, 256)
         self.assertEqual(big_im_pred.shape, (512, 512, 3))
         self.assertTrue(np.all(big_im_pred > 0))
 
     def test_predict_image_invalid_input(self):
         big_im = np.zeros((512,))
         with self.assertRaises(ValueError):
-            seg.predict_image(big_im, self.model, 256)
+            sef.predict_image(big_im, self.model, 256)
 
 
 class TestLabelGrains(unittest.TestCase):
@@ -142,21 +142,21 @@ class TestLabelGrains(unittest.TestCase):
         self.prediction[30:40, 30:40, 2] = 1  # boundary
 
     def test_label_grains_output_shapes(self):
-        labels_simple, all_coords = seg.label_grains(self.image, self.prediction)
+        labels_simple, all_coords = sef.label_grains(self.image, self.prediction)
         self.assertEqual(labels_simple.shape, self.image.shape[:2])
         self.assertEqual(all_coords.shape[1], 2)
 
     def test_label_grains_nonzero_labels(self):
-        labels_simple, all_coords = seg.label_grains(self.image, self.prediction)
+        labels_simple, all_coords = sef.label_grains(self.image, self.prediction)
         self.assertTrue(np.any(labels_simple > 0))
 
     def test_label_grains_coords_within_image(self):
-        labels_simple, all_coords = seg.label_grains(self.image, self.prediction)
+        labels_simple, all_coords = sef.label_grains(self.image, self.prediction)
         self.assertTrue(np.all(all_coords[:, 0] < self.image.shape[1]))
         self.assertTrue(np.all(all_coords[:, 1] < self.image.shape[0]))
 
     def test_label_grains_no_background_coords(self):
-        labels_simple, all_coords = seg.label_grains(self.image, self.prediction)
+        labels_simple, all_coords = sef.label_grains(self.image, self.prediction)
         background_probs = self.prediction[:, :, 0][all_coords[:, 1], all_coords[:, 0]]
         self.assertTrue(np.all(background_probs < 0.3))
 
@@ -170,7 +170,7 @@ class TestSamSegmentationEmptyPrompts(unittest.TestCase):
         coords = np.empty((0, 2), dtype=np.int32)
         # The guard fires before the SAM model is used, so sam can be None
         with self.assertRaisesRegex(ValueError, "No SAM prompts"):
-            seg.sam_segmentation(
+            sef.sam_segmentation(
                 None, image, image_pred, coords, labels, min_area=400.0
             )
 
@@ -190,7 +190,7 @@ class TestPredictLargeImageNoGrains(unittest.TestCase):
             fname = os.path.join(tmpdir, "blank.png")
             Image.fromarray(np.zeros((256, 256, 3), dtype=np.uint8)).save(fname)
             with self.assertWarnsRegex(UserWarning, "No grains were detected"):
-                all_grains, image_pred, all_coords = seg.predict_large_image(
+                all_grains, image_pred, all_coords = sef.predict_large_image(
                     fname,
                     BackgroundModel(),
                     use_sam=False,
@@ -218,7 +218,7 @@ class TestFindOverlappingPolygons(unittest.TestCase):
         ]
 
     def test_find_overlapping_polygons(self):
-        overlapping_polygons = seg.find_overlapping_polygons(self.polygons)
+        overlapping_polygons = sef.find_overlapping_polygons(self.polygons)
 
         # Check the number of overlapping pairs
         self.assertEqual(len(overlapping_polygons), 2)
@@ -232,7 +232,7 @@ class TestFindOverlappingPolygons(unittest.TestCase):
             Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
             Polygon([(2, 2), (3, 2), (3, 3), (2, 3)]),
         ]
-        overlapping_polygons = seg.find_overlapping_polygons(non_overlapping_polygons)
+        overlapping_polygons = sef.find_overlapping_polygons(non_overlapping_polygons)
 
         # Check that there are no overlapping pairs
         self.assertEqual(len(overlapping_polygons), 0)
@@ -243,7 +243,7 @@ class TestFindOverlappingPolygons(unittest.TestCase):
             Polygon([(1, 1), (4, 1), (4, 4), (1, 4)]),
             Polygon([(1.5, 1.5), (4.5, 1.5), (4.5, 4.5), (1.5, 4.5)]),
         ]
-        overlapping_polygons = seg.find_overlapping_polygons(all_overlapping_polygons)
+        overlapping_polygons = sef.find_overlapping_polygons(all_overlapping_polygons)
 
         # Check the number of overlapping pairs
         self.assertEqual(len(overlapping_polygons), 3)
@@ -257,14 +257,14 @@ class TestFindOverlappingPolygons(unittest.TestCase):
 class TestUnet(unittest.TestCase):
 
     def test_unet_output_shape(self):
-        model = seg.Unet()
+        model = sef.Unet()
         input_shape = (1, 256, 256, 3)
         dummy_input = np.zeros(input_shape, dtype=np.float32)
         output = model.predict(dummy_input)
         self.assertEqual(output.shape, (1, 256, 256, 3))
 
     def test_unet_layer_names(self):
-        model = seg.Unet()
+        model = sef.Unet()
         expected_layer_names = [
             "input",
             "conv2d",
@@ -312,7 +312,7 @@ class TestUnet(unittest.TestCase):
         self.assertEqual(actual_layer_names, expected_layer_names)
 
     def test_unet_compile(self):
-        model = seg.Unet()
+        model = sef.Unet()
         model.compile(
             optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"]
         )
@@ -328,7 +328,7 @@ class TestWeightedCrossentropy(unittest.TestCase):
         y_pred = tf.constant(
             [[[[2.0, 1.0, 0.1], [0.5, 2.0, 0.5], [0.1, 0.5, 2.0]]]], dtype=tf.float32
         )
-        loss = seg.weighted_crossentropy(y_true, y_pred)
+        loss = sef.weighted_crossentropy(y_true, y_pred)
         self.assertEqual(loss.shape, ())
 
     def test_weighted_crossentropy_value(self):
@@ -336,7 +336,7 @@ class TestWeightedCrossentropy(unittest.TestCase):
         y_pred = tf.constant(
             [[[[2.0, 1.0, 0.1], [0.5, 2.0, 0.5], [0.1, 0.5, 2.0]]]], dtype=tf.float32
         )
-        loss = seg.weighted_crossentropy(y_true, y_pred)
+        loss = sef.weighted_crossentropy(y_true, y_pred)
         expected_loss = 0.9759197  # Precomputed expected loss value (with label smoothing=0.1)
         self.assertAlmostEqual(loss.numpy(), expected_loss, places=5)
 
@@ -355,21 +355,21 @@ class TestCalculateIoU(unittest.TestCase):
         self.poly4 = Polygon([(0, 0), (4, 0), (4, 4), (0, 4)])  # Larger square polygon
 
     def test_calculate_iou_overlapping(self):
-        iou = seg.calculate_iou(self.poly1, self.poly2)
+        iou = sef.calculate_iou(self.poly1, self.poly2)
         expected_iou = 1 / 7  # Precomputed expected IoU value
         self.assertAlmostEqual(iou, expected_iou, places=5)
 
     def test_calculate_iou_non_overlapping(self):
-        iou = seg.calculate_iou(self.poly1, self.poly3)
+        iou = sef.calculate_iou(self.poly1, self.poly3)
         self.assertEqual(iou, 0.0)
 
     def test_calculate_iou_contained(self):
-        iou = seg.calculate_iou(self.poly1, self.poly4)
+        iou = sef.calculate_iou(self.poly1, self.poly4)
         expected_iou = 1 / 4  # Precomputed expected IoU value
         self.assertAlmostEqual(iou, expected_iou, places=5)
 
     def test_calculate_iou_identical(self):
-        iou = seg.calculate_iou(self.poly1, self.poly1)
+        iou = sef.calculate_iou(self.poly1, self.poly1)
         self.assertEqual(iou, 1.0)
 
 
@@ -389,7 +389,7 @@ class TestPickMostSimilarPolygon(unittest.TestCase):
         ]
 
     def test_pick_most_similar_polygon(self):
-        most_similar_polygon = seg.pick_most_similar_polygon(self.polygons)
+        most_similar_polygon = sef.pick_most_similar_polygon(self.polygons)
 
         # Check that the most similar polygon is one of the input polygons
         self.assertIn(most_similar_polygon, self.polygons)
@@ -403,7 +403,7 @@ class TestPickMostSimilarPolygon(unittest.TestCase):
             Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
             Polygon([(2, 2), (3, 2), (3, 3), (2, 3)]),
         ]
-        most_similar_polygon = seg.pick_most_similar_polygon(non_overlapping_polygons)
+        most_similar_polygon = sef.pick_most_similar_polygon(non_overlapping_polygons)
 
         # Check that the most similar polygon is one of the input polygons
         self.assertIn(most_similar_polygon, non_overlapping_polygons)
@@ -419,7 +419,7 @@ class TestPickMostSimilarPolygon(unittest.TestCase):
             Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
             Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
         ]
-        most_similar_polygon = seg.pick_most_similar_polygon(identical_polygons)
+        most_similar_polygon = sef.pick_most_similar_polygon(identical_polygons)
 
         # Check that the most similar polygon is one of the input polygons
         self.assertIn(most_similar_polygon, identical_polygons)
@@ -452,7 +452,7 @@ class TestFindConnectedComponents(unittest.TestCase):
         ]
 
     def test_find_connected_components(self):
-        new_grains, comps, g = seg.find_connected_components(
+        new_grains, comps, g = sef.find_connected_components(
             self.polygons, min_area=1.0
         )
 
@@ -469,7 +469,7 @@ class TestFindConnectedComponents(unittest.TestCase):
         self.assertEqual(len(g.edges), 2)
 
     def test_find_connected_components_with_min_area(self):
-        new_grains, comps, g = seg.find_connected_components(
+        new_grains, comps, g = sef.find_connected_components(
             self.polygons, min_area=2.0
         )
 
@@ -490,7 +490,7 @@ class TestFindConnectedComponents(unittest.TestCase):
             Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
             Polygon([(2, 2), (3, 2), (3, 3), (2, 3)]),
         ]
-        new_grains, comps, g = seg.find_connected_components(
+        new_grains, comps, g = sef.find_connected_components(
             non_overlapping_polygons, min_area=0.5
         )
 
@@ -526,7 +526,7 @@ class TestMergeOverlappingPolygons(unittest.TestCase):
         self.image_pred = np.zeros((10, 10, 3))
 
     def test_merge_overlapping_polygons(self):
-        merged_grains = seg.merge_overlapping_polygons(
+        merged_grains = sef.merge_overlapping_polygons(
             self.all_grains, self.new_grains, self.comps, self.min_area, self.image_pred
         )
         self.assertEqual(len(merged_grains), 2)
@@ -536,7 +536,7 @@ class TestMergeOverlappingPolygons(unittest.TestCase):
 
     def test_merge_overlapping_polygons_min_area(self):
         min_area = 5.0
-        merged_grains = seg.merge_overlapping_polygons(
+        merged_grains = sef.merge_overlapping_polygons(
             self.all_grains, self.new_grains, self.comps, min_area, self.image_pred
         )
         self.assertEqual(len(merged_grains), 2)
@@ -552,7 +552,7 @@ class TestMergeOverlappingPolygons(unittest.TestCase):
         ]
         comps = [{2, 3}]
         new_grains = polygons[:2]
-        merged_grains = seg.merge_overlapping_polygons(
+        merged_grains = sef.merge_overlapping_polygons(
             polygons, new_grains, comps, 0.5, self.image_pred
         )
         self.assertEqual(len(merged_grains), 3)
@@ -566,7 +566,7 @@ class TestMergeOverlappingPolygons(unittest.TestCase):
         all_grains = [self.poly1, self.poly2, self.poly3, self.poly4, poly5]
         new_grains = []
         comps = [{0, 1, 2, 3, 4}]
-        merged_grains = seg.merge_overlapping_polygons(
+        merged_grains = sef.merge_overlapping_polygons(
             all_grains, new_grains, comps, self.min_area, self.image_pred
         )
         self.assertEqual(len(merged_grains), 1)
@@ -580,7 +580,7 @@ class TestClassifyPoints(unittest.TestCase):
         feature2 = [1, 2, 3]
         x1, y1 = 0, 0
         x2, y2 = 4, 4
-        classifications = seg.classify_points(feature1, feature2, x1, y1, x2, y2)
+        classifications = sef.classify_points(feature1, feature2, x1, y1, x2, y2)
         self.assertEqual(classifications, [0, 0, 0])
 
     def test_classify_points_one_side(self):
@@ -588,7 +588,7 @@ class TestClassifyPoints(unittest.TestCase):
         feature2 = [2, 3, 4]
         x1, y1 = 0, 0
         x2, y2 = 4, 4
-        classifications = seg.classify_points(feature1, feature2, x1, y1, x2, y2)
+        classifications = sef.classify_points(feature1, feature2, x1, y1, x2, y2)
         self.assertEqual(classifications, [0, 0, 0])
 
     def test_classify_points_other_side(self):
@@ -596,7 +596,7 @@ class TestClassifyPoints(unittest.TestCase):
         feature2 = [1, 2, 3]
         x1, y1 = 0, 0
         x2, y2 = 4, 4
-        classifications = seg.classify_points(feature1, feature2, x1, y1, x2, y2)
+        classifications = sef.classify_points(feature1, feature2, x1, y1, x2, y2)
         self.assertEqual(classifications, [1, 1, 1])
 
     def test_classify_points_mixed(self):
@@ -604,7 +604,7 @@ class TestClassifyPoints(unittest.TestCase):
         feature2 = [2, 3, 2, 1]
         x1, y1 = 0, 0
         x2, y2 = 4, 4
-        classifications = seg.classify_points(feature1, feature2, x1, y1, x2, y2)
+        classifications = sef.classify_points(feature1, feature2, x1, y1, x2, y2)
         self.assertEqual(classifications, [0, 0, 1, 1])
 
 
@@ -621,22 +621,22 @@ class TestWeightedEcdf(unittest.TestCase):
         values_sorted = np.sort(self.values)
         n = len(values_sorted)
         legacy = (np.arange(1, n + 1) / n)[::-1]
-        v, cdf, exceedance = seg.weighted_ecdf(self.values)
+        v, cdf, exceedance = sef.weighted_ecdf(self.values)
         np.testing.assert_array_equal(v, values_sorted)
         np.testing.assert_allclose(exceedance, legacy)
 
     def test_values_are_sorted(self):
-        v, _, _ = seg.weighted_ecdf(self.values, self.weights)
+        v, _, _ = sef.weighted_ecdf(self.values, self.weights)
         np.testing.assert_array_equal(v, np.sort(self.values))
 
     def test_cdf_is_monotonic_and_ends_at_one(self):
-        _, cdf, _ = seg.weighted_ecdf(self.values, self.weights)
+        _, cdf, _ = sef.weighted_ecdf(self.values, self.weights)
         self.assertTrue(np.all(np.diff(cdf) >= 0))
         self.assertAlmostEqual(cdf[-1], 1.0)
         self.assertGreater(cdf[0], 0.0)
 
     def test_exceedance_is_monotonic_and_starts_at_one(self):
-        _, _, exceedance = seg.weighted_ecdf(self.values, self.weights)
+        _, _, exceedance = sef.weighted_ecdf(self.values, self.weights)
         self.assertTrue(np.all(np.diff(exceedance) <= 0))
         self.assertAlmostEqual(exceedance[0], 1.0)
         self.assertGreater(exceedance[-1], 0.0)
@@ -649,8 +649,8 @@ class TestWeightedEcdf(unittest.TestCase):
         weights = rng.integers(1, 12, 100).astype(float)
         replicated = np.repeat(values, weights.astype(int))
 
-        v_w, cdf_w, exc_w = seg.weighted_ecdf(values, weights)
-        v_r, cdf_r, exc_r = seg.weighted_ecdf(replicated)
+        v_w, cdf_w, exc_w = sef.weighted_ecdf(values, weights)
+        v_r, cdf_r, exc_r = sef.weighted_ecdf(replicated)
 
         top = np.searchsorted(v_r, v_w, side="right") - 1
         bottom = np.searchsorted(v_r, v_w, side="left")
@@ -659,21 +659,21 @@ class TestWeightedEcdf(unittest.TestCase):
 
     def test_invariant_to_weight_scaling(self):
         # Only the relative weights matter, so the units of the areas do not
-        _, cdf_a, _ = seg.weighted_ecdf(self.values, self.weights)
-        _, cdf_b, _ = seg.weighted_ecdf(self.values, self.weights * 1e6)
+        _, cdf_a, _ = sef.weighted_ecdf(self.values, self.weights)
+        _, cdf_b, _ = sef.weighted_ecdf(self.values, self.weights * 1e6)
         np.testing.assert_allclose(cdf_a, cdf_b)
 
     def test_uniform_weights_match_no_weights(self):
-        _, cdf_a, _ = seg.weighted_ecdf(self.values)
-        _, cdf_b, _ = seg.weighted_ecdf(self.values, np.full(200, 3.0))
+        _, cdf_a, _ = sef.weighted_ecdf(self.values)
+        _, cdf_b, _ = sef.weighted_ecdf(self.values, np.full(200, 3.0))
         np.testing.assert_allclose(cdf_a, cdf_b)
 
     def test_mismatched_weights_raise(self):
         with self.assertRaises(ValueError):
-            seg.weighted_ecdf(self.values, self.weights[:10])
+            sef.weighted_ecdf(self.values, self.weights[:10])
 
     def test_single_value(self):
-        v, cdf, exceedance = seg.weighted_ecdf([2.5], [7.0])
+        v, cdf, exceedance = sef.weighted_ecdf([2.5], [7.0])
         np.testing.assert_array_equal(v, [2.5])
         np.testing.assert_allclose(cdf, [1.0])
         np.testing.assert_allclose(exceedance, [1.0])
@@ -688,7 +688,7 @@ class TestWeightedPercentile(unittest.TestCase):
 
     def test_equal_weights_approximate_numpy(self):
         # The midpoint convention differs slightly from numpy's, but not much
-        result = seg.weighted_percentile(self.values, self.percentiles)
+        result = sef.weighted_percentile(self.values, self.percentiles)
         expected = np.percentile(self.values, self.percentiles)
         np.testing.assert_allclose(result, expected, atol=0.02)
 
@@ -697,25 +697,25 @@ class TestWeightedPercentile(unittest.TestCase):
         values = rng.uniform(0.01, 2.0, 200)
         weights = rng.integers(1, 12, 200).astype(float)
         replicated = np.repeat(values, weights.astype(int))
-        result = seg.weighted_percentile(values, self.percentiles, weights=weights)
+        result = sef.weighted_percentile(values, self.percentiles, weights=weights)
         expected = np.percentile(replicated, self.percentiles)
         np.testing.assert_allclose(result, expected, atol=0.02)
 
     def test_monotonic_in_percentile(self):
         weights = np.abs(self.values) + 0.1
-        result = seg.weighted_percentile(self.values, self.percentiles, weights)
+        result = sef.weighted_percentile(self.values, self.percentiles, weights)
         self.assertTrue(np.all(np.diff(result) >= 0))
 
     def test_endpoints_are_min_and_max(self):
         weights = np.abs(self.values) + 0.1
-        result = seg.weighted_percentile(self.values, [0, 100], weights)
+        result = sef.weighted_percentile(self.values, [0, 100], weights)
         self.assertAlmostEqual(result[0], np.min(self.values))
         self.assertAlmostEqual(result[1], np.max(self.values))
 
     def test_invariant_to_weight_scaling(self):
         weights = np.abs(self.values) + 0.1
-        a = seg.weighted_percentile(self.values, self.percentiles, weights)
-        b = seg.weighted_percentile(self.values, self.percentiles, weights * 1e6)
+        a = sef.weighted_percentile(self.values, self.percentiles, weights)
+        b = sef.weighted_percentile(self.values, self.percentiles, weights * 1e6)
         np.testing.assert_allclose(a, b)
 
     def test_weighting_pulls_median_toward_heavy_values(self):
@@ -723,18 +723,18 @@ class TestWeightedPercentile(unittest.TestCase):
         # large grains, which is the whole point of area weighting
         values = np.array([1.0, 2.0, 3.0, 4.0, 100.0])
         areas = values ** 2
-        unweighted = seg.weighted_percentile(values, 50)
-        weighted = seg.weighted_percentile(values, 50, weights=areas)
+        unweighted = sef.weighted_percentile(values, 50)
+        weighted = sef.weighted_percentile(values, 50, weights=areas)
         self.assertAlmostEqual(float(unweighted), 3.0)
         self.assertGreater(float(weighted), 50.0)
 
     def test_scalar_percentile(self):
-        result = seg.weighted_percentile(self.values, 50)
+        result = sef.weighted_percentile(self.values, 50)
         self.assertEqual(np.asarray(result).shape, ())
 
     def test_mismatched_weights_raise(self):
         with self.assertRaises(ValueError):
-            seg.weighted_percentile(self.values, self.percentiles, weights=[1.0, 2.0])
+            sef.weighted_percentile(self.values, self.percentiles, weights=[1.0, 2.0])
 
 
 class TestPlotHistogramOfAxisLengths(unittest.TestCase):
@@ -752,14 +752,14 @@ class TestPlotHistogramOfAxisLengths(unittest.TestCase):
         return np.array([patch.get_height() for patch in ax.containers[0]])
 
     def test_unweighted_labels_count(self):
-        fig, ax = seg.plot_histogram_of_axis_lengths(self.major, self.minor)
+        fig, ax = sef.plot_histogram_of_axis_lengths(self.major, self.minor)
         self.assertEqual(ax.get_ylabel(), "count")
         # Without weights the bars are plain counts, so they sum to the
         # number of grains inside the binning range
         self.assertLessEqual(self.bar_heights(ax).sum(), len(self.major))
 
     def test_weighted_labels_area_weighted_count(self):
-        fig, ax = seg.plot_histogram_of_axis_lengths(
+        fig, ax = sef.plot_histogram_of_axis_lengths(
             self.major, self.minor, area=self.area
         )
         self.assertEqual(ax.get_ylabel(), "area-weighted count")
@@ -767,23 +767,23 @@ class TestPlotHistogramOfAxisLengths(unittest.TestCase):
     def test_weights_are_normalized_to_grain_count(self):
         # Weights sum to the number of grains, so the y axis stays on a
         # count-like scale no matter what units the areas are in
-        fig, ax = seg.plot_histogram_of_axis_lengths(
+        fig, ax = sef.plot_histogram_of_axis_lengths(
             self.major, self.minor, area=self.area
         )
         self.assertAlmostEqual(self.bar_heights(ax).sum(), len(self.major), places=6)
 
     def test_invariant_to_area_units(self):
-        fig_a, ax_a = seg.plot_histogram_of_axis_lengths(
+        fig_a, ax_a = sef.plot_histogram_of_axis_lengths(
             self.major, self.minor, area=self.area
         )
-        fig_b, ax_b = seg.plot_histogram_of_axis_lengths(
+        fig_b, ax_b = sef.plot_histogram_of_axis_lengths(
             self.major, self.minor, area=self.area * 1e6
         )
         np.testing.assert_allclose(self.bar_heights(ax_a), self.bar_heights(ax_b))
 
     def test_weighting_changes_the_distribution(self):
-        fig_a, ax_a = seg.plot_histogram_of_axis_lengths(self.major, self.minor)
-        fig_b, ax_b = seg.plot_histogram_of_axis_lengths(
+        fig_a, ax_a = sef.plot_histogram_of_axis_lengths(self.major, self.minor)
+        fig_b, ax_b = sef.plot_histogram_of_axis_lengths(
             self.major, self.minor, area=self.area
         )
         self.assertFalse(
@@ -796,12 +796,12 @@ class TestPlotHistogramOfAxisLengths(unittest.TestCase):
         # wrong areas
         major = self.major.copy()
         major[17] = np.nan
-        fig_a, ax_a = seg.plot_histogram_of_axis_lengths(
+        fig_a, ax_a = sef.plot_histogram_of_axis_lengths(
             major, self.minor, area=self.area
         )
         keep = np.ones(len(self.major), dtype=bool)
         keep[17] = False
-        fig_b, ax_b = seg.plot_histogram_of_axis_lengths(
+        fig_b, ax_b = sef.plot_histogram_of_axis_lengths(
             self.major[keep], self.minor[keep], area=self.area[keep]
         )
         np.testing.assert_allclose(self.bar_heights(ax_a), self.bar_heights(ax_b))
@@ -809,7 +809,7 @@ class TestPlotHistogramOfAxisLengths(unittest.TestCase):
     def test_nan_in_area_is_dropped(self):
         area = self.area.copy()
         area[3] = np.nan
-        fig, ax = seg.plot_histogram_of_axis_lengths(
+        fig, ax = sef.plot_histogram_of_axis_lengths(
             self.major, self.minor, area=area
         )
         heights = self.bar_heights(ax)
@@ -818,13 +818,13 @@ class TestPlotHistogramOfAxisLengths(unittest.TestCase):
 
     def test_mismatched_area_raises(self):
         with self.assertRaises(ValueError):
-            seg.plot_histogram_of_axis_lengths(
+            sef.plot_histogram_of_axis_lengths(
                 self.major, self.minor, area=self.area[:10]
             )
 
     def test_all_nan_returns_placeholder(self):
         nans = np.full(5, np.nan)
-        fig, ax = seg.plot_histogram_of_axis_lengths(nans, nans)
+        fig, ax = sef.plot_histogram_of_axis_lengths(nans, nans)
         self.assertEqual(len(ax.containers), 0)
         self.assertEqual(ax.get_ylabel(), "count")
 
@@ -833,14 +833,14 @@ class TestGetAreaWeightedDistribution(unittest.TestCase):
 
     def test_deprecation_warning(self):
         with self.assertWarns(DeprecationWarning):
-            seg.get_area_weighted_distribution([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+            sef.get_area_weighted_distribution([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
 
     def test_still_replicates(self):
         import warnings
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            result = seg.get_area_weighted_distribution([1.0, 2.0], [1.0, 3.0])
+            result = sef.get_area_weighted_distribution([1.0, 2.0], [1.0, 3.0])
         # mean area is 2.0, so the copy counts are int(1/1) and int(3/1)
         self.assertEqual(result, [1.0, 2.0, 2.0, 2.0])
 

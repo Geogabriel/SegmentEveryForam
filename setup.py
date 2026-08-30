@@ -1,34 +1,51 @@
 import setuptools
 
 long_description = """\
-'segmenteverygrain' is a Python package that aims to detect grains (or grain-like objects) in images. 
-The goal is to develop an ML model that does a reasonably good job at detecting most of the grains in a photo, 
-so that it will be useful for determining grain size and grain shape, a common task in geomorphology and sedimentary geology.
+'segmenteveryforam' is a Python package for automated segmentation
+and analysis of foraminifera in images.
+
+SegmentEveryForam is adapted from the Segmenteverygrain package
+developed by Zoltan Sylvester and extends the workflow toward
+foraminiferal image segmentation and analysis.
 """
 
 setuptools.setup(
-    name="segmenteverygrain",
-    version="0.5.0",
-    author="Zoltan Sylvester",
-    author_email="zoltan.sylvester@beg.utexas.edu",
-    description="a SAM-based model for segmenting grains in images of grains",
-    keywords = 'sedimentology, geomorphology, grain size, segment anything model',
+    name="segmenteveryforam",
+    version="0.1.0",
+    author="Gabriel Ojo",
+    description="A U-Net and SAM-based package for segmenting foraminifera in images",
+    keywords="foraminifera, micropaleontology, image segmentation, morphometrics, segment anything model",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/zsylvester/segmenteverygrain",
-    python_requires='>=3.10',
-    packages=['segmenteverygrain'],
-    install_requires=['numpy','matplotlib',
-        'scipy','pillow','scikit-image','tqdm','opencv-python',
-        'networkx','rasterio','shapely','tensorflow','sam2',
-        'scikit-learn','rtree','pandas','geopandas','keras'],
+    url="https://github.com/Geogabriel/SegmentEveryForam",
+    python_requires=">=3.10",
+    packages=["segmenteveryforam"],
+    install_requires=[
+        "numpy",
+        "matplotlib",
+        "scipy",
+        "pillow",
+        "scikit-image",
+        "tqdm",
+        "opencv-python",
+        "networkx",
+        "rasterio",
+        "shapely",
+        "tensorflow",
+        "sam2",
+        "scikit-learn",
+        "rtree",
+        "pandas",
+        "geopandas",
+        "keras",
+    ],
     license_files=[],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        'Intended Audience :: Science/Research',
+        "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
