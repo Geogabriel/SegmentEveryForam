@@ -233,7 +233,7 @@ class Grain(object):
         ax : matplotlib.Axes
             Axes instance on which to draw the grain properties.
         scale : float
-            Scaling factor, useful with downscaled GrainPlots.
+            Scaling factor, useful with downscaled ForamPlots.
 
         Returns
         -------
@@ -270,7 +270,7 @@ class Grain(object):
         ax : matplotlib.Axes
             Axes instance on which to draw this grain.
         scale : float
-            Scaling factor, useful with downscaled GrainPlots.
+            Scaling factor, useful with downscaled ForamPlots.
         animated : bool
             Whether the patch should be animated (for blitting). Set to False
             for environments that don't support blitting (e.g., Colab).
@@ -300,7 +300,7 @@ class Grain(object):
         return patch
 
 
-class GrainPlot(object):
+class ForamPlot(object):
     ''' 
     Interactive plot to create, delete, and merge grains.
     
@@ -375,7 +375,7 @@ class GrainPlot(object):
         kwargs : dict
             Keyword arguments to pass to plt.figure().
         '''
-        logger.info('Creating GrainPlot...')
+        logger.info('Creating ForamPlot...')
         
         # Store color palette and color_by selection for later use
         self.color_palette = color_palette
@@ -506,12 +506,12 @@ class GrainPlot(object):
         
         # Add keyboard shortcuts to the window title
         shortcuts_title = (
-            'GrainPlot | Click=Auto-create, Alt+Click=Multi-prompt, Shift+Drag=Scale, '
-            'D=Delete, M=Merge, Z=Undo, H=Coverage, Esc=Clear, Ctrl=Hide'
+            'ForamPlot | Click=Auto-create, Alt+Click=Multi-prompt, Shift+Drag=Scale, '
+            'D=Delete, A=Add segments, Z=Undo, H=Coverage, Esc=Clear, Ctrl=Hide'
         )
         self.fig.canvas.manager.set_window_title(shortcuts_title)
         
-        logger.info('GrainPlot created!')
+        logger.info('ForamPlot created!')
 
     # Color generation -------------------------------------------------------
     def _generate_colors(self, n_grains: int, cmap_name: str) -> list:
@@ -1053,12 +1053,15 @@ class GrainPlot(object):
 
     def merge_grains(self) -> Grain:
         ''' 
-        Attempt to merge all selected grains.
+        Add all selected foram segments into one foram.
+        selected segmentation polygons are combined into a single
+        foram object when they form one contiguous geometry.
+
 
         Returns
         -------
         new_grain : Grain
-            Merged grain, if merge is successful. None otherwise.
+            Combined foram object if successful. None otherwise.
         '''
         # Verify there are at least two grains selected to merge
         if len(self.selected_grains) < 2:
@@ -1226,7 +1229,8 @@ class GrainPlot(object):
         d: Delete a selected grain.
         alt (hold): Allow placing multiple prompts before creating grain.
         h: Toggle coverage mask (highlights unsegmented areas in red).
-        m: Merge selected grains.
+        a: Add selected foram segments into one foram.
+        m: Legacy shortcut for adding selected foram segments.
         z: Undo the most recently created grain.
         control (hold): Temporarily hide all grains.
         escape: Remove all selections, prompts, and info.
@@ -1255,8 +1259,9 @@ class GrainPlot(object):
             # Set flag to allow multiple prompts
             self.alt_down = True
             return  # Don't update, just set the flag
-        elif key == 'm':
-            # Merge selected grains
+        elif key in ('a', 'm'):
+            # Add selected foram segments into one foram.
+            # 'm' is retained as a legacy shortcut.
             self.merge_grains()
         elif key == 'z':
             self.undo_grain()
@@ -1392,7 +1397,8 @@ class GrainPlot(object):
             Filename for output image. File type is determined by extension.
         '''
         self.fig.savefig(fn, bbox_inches='tight', pad_inches=0)
-
+# Backward-compatible alias for code written against Segmenteverygrain.
+GrainPlot = ForamPlot
 def predict_from_prompts(predictor, box=None, points=None, point_labels=None):
     """
     Perform a point-prompt-based segmentation using the SAM model. 

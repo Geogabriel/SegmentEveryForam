@@ -1,168 +1,199 @@
-# segmenteverygrain
+# SegmentEveryForam
 
-<img src="docs/source/_static/images/gravel_example_mask.png" width="600">
+**SegmentEveryForam** is a Python package for automated segmentation, interactive correction, and image-based morphometric analysis of foraminifera.
 
-[![Tests](https://github.com/zsylvester/segmenteverygrain/actions/workflows/ci.yaml/badge.svg)](https://github.com/zsylvester/segmenteverygrain/actions/workflows/ci.yaml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![DOI](https://joss.theoj.org/papers/10.21105/joss.07953/status.svg)](https://doi.org/10.21105/joss.07953)
+The package is adapted from [Segmenteverygrain](https://github.com/zsylvester/segmenteverygrain), developed by Zoltán Sylvester and collaborators. Segmenteverygrain combines a U-Net-style convolutional neural network with the Segment Anything Model (SAM) to identify and segment individual objects in images.
 
+SegmentEveryForam extends this framework toward foraminiferal image analysis while retaining the core segmentation architecture of Segmenteverygrain.
 
-## Description
+> **Development status:** SegmentEveryForam is currently under active development.
 
-'segmenteverygrain' is a Python package that aims to detect grains (or grain-like objects) in images. The goal is to develop an ML model that does a reasonably good job at detecting most of the grains in a photo, so that it will be useful for determining grain size and grain shape, a common task in geomorphology and sedimentary geology. 'segmenteverygrain' relies on [SAM 2.1](https://github.com/facebookresearch/sam2) (Segment Anything Model 2.1), developed by Meta, for getting high-quality outlines of the grains. However, SAM requires prompts for every object detected and, when used in 'everything' mode, it tends to be slow and results in many overlapping masks and non-grain (background) objects. To deal with these issues, 'segmenteverygrain' relies on a Unet-style, patch-based convolutional neural network to create a first-pass segmentation which is then used to generate prompts for the SAM-based segmentation. Some of the grains will be missed with this approach, but the segmentations that are created tend to be of high quality.
+## Overview
 
-'segmenteverygrain' also includes a set of functions that make it possible to clean up the segmentation results: delete and merge objects by clicking on them, and adding grains that were not segmented automatically. The QC-d masks can be saved and added to a dataset of grain images. These images then can be used to improve the Unet model. Many of the images used in the dataset are from the [sedinet](https://github.com/DigitalGrainSize/SediNet) project.
+SegmentEveryForam uses a two-stage segmentation workflow:
 
+1. A U-Net model generates an initial semantic segmentation of the image.
+2. The initial segmentation is used to generate prompts for SAM 2.1, which produces individual object masks.
+
+The resulting segmentations can then be inspected and manually corrected using the interactive `ForamPlot` interface.
+
+The general workflow is:
+
+```text
+Microscope image
+      |
+      v
+U-Net segmentation
+      |
+      v
+SAM prompt generation
+      |
+      v
+SAM 2.1 instance segmentation
+      |
+      v
+Interactive correction
+      |
+      v
+Foraminifera masks and measurements
+```
+
+## Current features
+
+SegmentEveryForam currently provides tools for:
+
+- U-Net-based semantic segmentation
+- SAM 2.1-based instance segmentation
+- Interactive correction of segmentation results
+- Manual creation of missed foraminifera using SAM prompts
+- Deletion of incorrectly segmented objects
+- Addition and merging of touching foram segments
+- Scale calibration
+- Extraction of segmentation masks and object measurements
+
+Additional foraminifera-specific functionality is under development.
 
 ## Requirements
 
-Python 3.10 or higher. All dependencies (TensorFlow, PyTorch, SAM 2, and others) are handled by the conda environment files or by pip — see the installation instructions below.
+Python 3.10 or higher is recommended.
 
-## Documentation
+Major dependencies include:
 
-More documentation is available at [https://zsylvester.github.io/segmenteverygrain/index.html](https://zsylvester.github.io/segmenteverygrain/index.html).
+- TensorFlow
+- Keras
+- PyTorch
+- SAM 2
+- NumPy
+- Pandas
+- Matplotlib
+- scikit-image
+- scikit-learn
+- OpenCV
+- Shapely
+- Rasterio
 
 ## Installation
 
-The quickest way to try 'segmenteverygrain' — without installing anything — is to run the [Segment_every_grain_colab.ipynb](notebooks/Segment_every_grain_colab.ipynb) notebook in Google Colab.
-
-For local use, we recommend cloning the repository (it contains the trained U-Net model and the example images) and creating a conda environment from the provided environment files. If you do not have conda, install [miniforge](https://conda-forge.org/download) first.
-
-Clone the repository:
-```
-git clone --depth 1 https://github.com/zsylvester/segmenteverygrain.git
-```
-
-Create the environment (this also installs the `segmenteverygrain` package and JupyterLab).
-
-Linux/Windows:
-```
-conda env create -f segmenteverygrain/environment.yml
-```
-Mac (Apple Silicon):
-```
-conda env create -f segmenteverygrain/environment_macos.yml
-```
-
-Activate the environment and launch JupyterLab from the repository folder:
-```
-conda activate segmenteverygrain
-cd segmenteverygrain
-jupyter lab
-```
-
-Then open [notebooks/Segment_every_grain.ipynb](notebooks/Segment_every_grain.ipynb) and run the cells from the top; the first cells download the SAM 2.1 model checkpoint (~860 MB) automatically.
-
-If you only need the library as a dependency in an existing environment (without the notebooks and model files), 'segmenteverygrain' is also available on PyPI:
-```
-pip install segmenteverygrain
-```
-
-Detailed step-by-step instructions — including conda setup from scratch, GPU notes for each platform, and troubleshooting — are in the [installation guide](https://zsylvester.github.io/segmenteverygrain/installation.html).
-
-## Getting started
-
-See the [Segment_every_grain.ipynb](notebooks/Segment_every_grain.ipynb) notebook for an example of how the models can be loaded and used for segmenting an image and QC-ing the result. The notebook goes through the steps of loading the models, running the segmentation, interactively updating the result using the `GrainPlot` class, and saving the grain data and the mask.
-
-The interactive editing interface (`GrainPlot`) provides the following controls:
-- **Left-click** on grain-free area: Instant grain creation
-- **Left-click** on existing grain: Select/unselect
-- **Alt + Left-click**: Foreground prompt for multi-prompt grain creation
-- **Alt + Right-click**: Background prompt for multi-prompt grain creation
-- **Shift + drag**: Draw scale bar for unit conversion
-- **c**: Create grain from placed prompts
-- **d**: Delete selected grains
-- **m**: Merge selected grains
-- **z**: Undo last created grain
-- **h**: Toggle coverage mask (highlights unsegmented areas in red)
-- **Esc**: Clear all selections and prompts
-- **Ctrl** (hold): Temporarily hide grain masks
-
-The screen recording below shows how new grains can be added and objects that are not proper grains can be deleted. The green dots are 'grain' prompts (Alt + Left-click); the red dots are background prompts (Alt + Right-click).
-
-https://github.com/user-attachments/assets/9884c6cd-0b53-45f2-8c87-33e7f4665714
-
-The images below illustrate how a relatively large thin-section image of a sandstone can be segmented using `segmenteverygrain`. Image from [Digital Rocks Portal](https://www.digitalrocksportal.org/projects/244).
-
-<img src="docs/miocene_sst_large_1.jpeg" width="100%">
-
-<img src="docs/miocene_sst_large_2.jpeg" width="100%">
-
- If the base Unet model does not work well on a specific type of image, it is a good idea to generate some new training data (a few small images are usually enough) and to fine tune the base model so that it works better on the new image type. This can be done by running the cells in the last section ('Finetuning the base model') of the [Segment_every_grain.ipynb](notebooks/Segment_every_grain.ipynb) notebook.
-
-## Grain extraction and clustering
-
-The `grain_utils` module provides tools for extracting individual grain images and clustering them for classification tasks:
-
-- **Extract grain images**: Crop and normalize individual grains from segmented images
-- **Feature extraction**: Use pre-trained CNNs (VGG16, ResNet50, InceptionV3) or color features
-- **Clustering**: Group similar grains using K-means, DBSCAN, or hierarchical clustering
-- **Interactive labeling**: Use `ClusterMontageLabeler` to manually label grains by category
-- **Quality control**: Use `ClusterMontageSelector` to remove unwanted grains or clusters
-
-See the documentation for detailed examples.
-
-The [Segment_every_grain_colab.ipynb](notebooks/Segment_every_grain_colab.ipynb) has been adjusted so that the segmentation can be tested in Google Colab. That said, the interactivity in Colab is not as smooth as in a local notebook.
-
-## Running times
-
-It takes 2 minutes and 40 seconds to run the full segmentation on a 3 megapixel (e.g., 1500x2000 pixels) image, on an Apple M2 Max laptop with 96 GB RAM. The same image takes the same amount of time to segment using Google Colab with a Nvidia A100 GPU.
-
-Obviously, large images take longer to process. The segmentation of the ~20 megapixel example image that is provided in the repository ('mair_et_al_L2_DJI_0382_image.jpg') takes ~20 minutes with both hardware configurations mentioned before. As the processing of large images is done in patches, the increase in computational time is roughly linear.
-
-## Contributing
-
-We welcome contributions from anyone interested in improving the project. To contribute to the model use the following steps:
-
-1. Fork the repository.
-2. Create a new branch for your changes:
+Clone the SegmentEveryForam repository:
 
 ```bash
-git checkout -b feature/my-feature
+git clone https://github.com/Geogabriel/SegmentEveryForam.git
+cd SegmentEveryForam
 ```
 
-3. Make your changes and commit them:
+SegmentEveryForam is currently under development, so installation instructions and environment files may continue to change as the package is developed.
+
+For development use, install the package from the repository in editable mode:
 
 ```bash
-git add .
-git commit -m "Add my feature"
+pip install -e .
 ```
 
-4. Push your changes to your forked repository:
+The package can then be imported using:
 
-```bash
-git push origin feature/my-feature
+```python
+import segmenteveryforam as sef
 ```
 
-5. Create a pull request from your forked repository back to the original repository.
+The interactive module can be imported using:
 
-## Reporting Issues
+```python
+import segmenteveryforam.interactions as sfi
+```
 
-If you encounter any issues or problems while using segmenteverygrain, we encourage you to report them to us. This helps us identify and address any bugs or areas for improvement.
+## Models
 
-To report an issue, please follow these steps:
+SegmentEveryForam combines a U-Net segmentation model with SAM 2.1.
 
-1. **Check the Existing Issues:** Before submitting a new issue, search our issue tracker to see if the problem you're experiencing has already been reported. If you find a similar issue, you can add any additional information or comments to that existing issue.
-2. **Create a New Issue:** If you don't find an existing issue that matches your problem, create a new issue by clicking the "New issue" button on the issues page. Provide a clear and descriptive title for your issue, and include the following information in the description:
-    - A detailed description of the problem you're experiencing, including any error messages or unexpected behavior.
-    - The steps to reproduce the issue, if possible.
-    - Your operating system and the version of the software you're using.
-    - Any relevant logs or screenshots that could help us understand the problem.
-3. **Submit the Issue**: Once you've provided all the necessary information, click the "Submit new issue" button to create the issue. Our team will review the issue and respond as soon as possible.
+The repository currently retains the original Segmenteverygrain U-Net model files:
 
-We appreciate you taking the time to report any issues you encounter. Your feedback helps us improve.
+```text
+models/
+├── seg_model.keras
+└── seg_model_smooth_labels.keras
+```
+
+These models originate from the Segmenteverygrain project and were trained for general grain segmentation. They are retained for compatibility and development purposes.
+
+Foraminifera-specific U-Net models are being developed separately for SegmentEveryForam.
+
+SAM 2.1 model checkpoints are developed and distributed by Meta and are not SegmentEveryForam models.
+
+See `models/README.md` for additional information about model provenance and usage.
+
+## Interactive editing
+
+SegmentEveryForam provides the `ForamPlot` interactive interface for inspecting and correcting segmentation results.
+
+A typical interface can be created with:
+
+```python
+plot = sfi.ForamPlot(
+    forams,
+    image=image,
+    predictor=predictor
+)
+
+plot.activate()
+```
+
+Current interactive controls include:
+
+- **Left click on an existing foram:** Select or unselect the segmentation
+- **Left click in an unsegmented area:** Create a foram using a SAM foreground prompt
+- **Alt + Left click:** Add a foreground SAM prompt
+- **Alt + Right click:** Add a background SAM prompt
+- **C:** Create a foram from existing SAM prompts
+- **D:** Delete selected foram segmentations
+- **A:** Add or merge selected touching foram segments
+- **M:** Legacy shortcut for merging selected segments
+- **Z:** Remove the most recently created segmentation
+- **H:** Toggle the coverage mask
+- **Esc:** Clear selections and prompts
+- **Ctrl (hold):** Temporarily hide selected masks
+- **Shift + drag:** Draw a scale bar for unit conversion
+
+`GrainPlot` remains available as a backward-compatible alias for code originally written for Segmenteverygrain.
+
+## Morphometric analysis
+
+Segmented objects can be measured using image-based morphometric properties such as:
+
+- area
+- major axis length
+- minor axis length
+- perimeter
+- orientation
+- centroid
+
+Additional derived measurements and foraminifera-specific analytical workflows are under development.
+
+## Relationship to Segmenteverygrain
+
+SegmentEveryForam is a derivative of the open-source Segmenteverygrain project.
+
+The original Segmenteverygrain software provides the foundation for much of the segmentation workflow, including U-Net-based segmentation, SAM integration, image-processing utilities, and interactive segmentation functionality.
+
+SegmentEveryForam is intended to extend this framework for applications involving foraminifera, including microscopy-based segmentation and morphometric analysis.
+
+The original Segmenteverygrain project is available at:
+
+https://github.com/zsylvester/segmenteverygrain
 
 ## Acknowledgements
 
-[Dave Matthews](https://github.com/dirtbirb) wrote the `interactions` module from scratch and, by doing this, made the interactive part of `segmenteverygrain` much faster and more user friendly. Thanks to Danny Stockli, Nick Howes, Kalinda Roberts, Jake Covault, Matt Malkowski, Raymond Luong, Wilson Bai, Rowan Martindale, and Sergey Fomel for discussions and/or helping with generating training data. Funding for this work came from the [Quantitative Clastics Laboratory industrial consortium](http://www.beg.utexas.edu/qcl) at the Bureau of Economic Geology, The University of Texas at Austin.
+SegmentEveryForam builds upon work by the developers and contributors of Segmenteverygrain.
+
+The original `interactions` module was developed by Dave Matthews for Segmenteverygrain. The Segmenteverygrain project was developed by Zoltán Sylvester and collaborators and benefited from contributions and discussions involving Danny Stockli, Nick Howes, Kalinda Roberts, Jake Covault, Matt Malkowski, Raymond Luong, Wilson Bai, Rowan Martindale, Sergey Fomel, and others.
+
+See the original Segmenteverygrain repository and publication for complete project acknowledgements.
 
 ## Citation
 
-If you use `segmenteverygrain` in your research, please cite the following paper:
+Because SegmentEveryForam is derived from Segmenteverygrain, users should cite the original Segmenteverygrain publication when using functionality derived from that software:
 
 Sylvester, Z., Stockli, D. F., Howes, N., Roberts, K., Malkowski, M. A., Poros, Z., Martindale, R. C., & Bai, W. (2025). Segmenteverygrain: A Python module for segmentation of grains in images. *Journal of Open Source Software*, 10(112), 7953. https://doi.org/10.21105/joss.07953
 
-BibTeX:
 ```bibtex
 @article{Sylvester2025,
   doi = {10.21105/joss.07953},
@@ -178,6 +209,12 @@ BibTeX:
 }
 ```
 
+A dedicated citation for SegmentEveryForam will be added if and when the software receives its own archived release or publication.
+
 ## License
 
-`segmenteverygrain` is licensed under the [Apache License 2.0](https://github.com/zsylvester/segmenteverygrain/blob/master/LICENSE.txt).
+SegmentEveryForam is distributed under the Apache License 2.0, consistent with the license of the original Segmenteverygrain project.
+
+The original Segmenteverygrain source code is copyright its respective authors and contributors. Modifications and additions made for SegmentEveryForam retain the applicable Apache 2.0 licensing requirements.
+
+See `LICENSE.txt` for the full license text.
