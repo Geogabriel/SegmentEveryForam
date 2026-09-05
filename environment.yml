@@ -1,29 +1,32 @@
-name: segmenteverygrain
+name: segmenteveryforam
 
 channels:
-  - conda-forge
+  - defaults
 
 dependencies:
   - python=3.10
-  - numpy
-  - matplotlib
-  - pyqt
-  - pandas
-  - jupyterlab
-  - scipy
-  - scikit-image
-  - scikit-learn
-  - tqdm
-  - networkx
-  - shapely
   - pip
   - pip:
-    - pillow
-    - rasterio
-    - opencv-python
-    - rtree
-    - tensorflow
-    - torch
-    - torchvision
-    - sam2
-    - segmenteverygrain
+      - numpy
+      - matplotlib
+      - scipy
+      - pillow
+      - scikit-image
+      - scikit-learn
+      - pandas
+      - geopandas
+      - tqdm
+      - networkx
+      - shapely
+      - rasterio
+      - opencv-python
+      - rtree
+      - tensorflow
+      - keras
+      - torch
+      - torchvision
+      - sam2
+      - PyQt5
+      - charset-normalizer
+      - jupyterlab
+      - -e .
