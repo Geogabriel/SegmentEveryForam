@@ -37,6 +37,34 @@ Interactive correction
       v
 Foraminifera masks and measurements
 ```
+## Segmentation examples
+
+<p align="center">
+  <img src="docs/source/_static/images/g_bulloides_original.jpeg" width="48%">
+  <img src="docs/source/_static/images/g_bulloides_segmented.png" width="48%">
+</p>
+
+<p align="center">
+  <em>Globigerina bulloides</em>: original microscope image (left) and SegmentEveryForam segmentation output (right).
+</p>
+
+<p align="center">
+  <img src="docs/source/_static/images/g_ruber_original.jpeg" width="48%">
+  <img src="docs/source/_static/images/g_ruber_segmented.png" width="48%">
+</p>
+
+<p align="center">
+  <em>Globigerinoides ruber</em>: original microscope image (left) and SegmentEveryForam segmentation output (right).
+</p>
+
+<p align="center">
+  <img src="docs/source/_static/images/orbulina_original.png" width="48%">
+  <img src="docs/source/_static/images/orbulina_segmented.png" width="48%">
+</p>
+
+<p align="center">
+  <em>Orbulina universa</em>: original microscope image (left) and SegmentEveryForam segmentation output (right).
+</p>
 
 ## Current features
 

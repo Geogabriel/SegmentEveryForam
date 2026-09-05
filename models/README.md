@@ -17,11 +17,44 @@ https://github.com/zsylvester/segmenteverygrain
 
 ## Foraminifera-specific models
 
-Foraminifera-specific U-Net models are being developed for SegmentEveryForam.
+SegmentEveryForam includes U-Net models fine-tuned specifically for foraminiferal segmentation.
 
-These models are intended to improve the initial semantic segmentation of foraminifera before SAM-based instance segmentation.
+### `seg_model_foram_v1_30epochs.keras`
 
-Foraminifera-specific model files and documentation will be added as the models are prepared for distribution.
+First SegmentEveryForam U-Net model fine-tuned for foraminiferal segmentation.
+
+Training details:
+
+- training images: 51 image-mask pairs
+- training patches: 7,140
+- patch size: 256 × 256 pixels
+- stride: 128 pixels
+- training epochs: 30
+- segmentation classes:
+  - 0: background
+  - 1: foraminiferal test interior
+  - 2: external boundary
+
+This model was trained using multiple foraminiferal images and serves as the first foraminifera-specific U-Net model developed for SegmentEveryForam.
+
+### `seg_model_foram_v2_G_ruber_30epochs.keras`
+
+Second SegmentEveryForam U-Net model, fine-tuned specifically for *Globigerinoides ruber* segmentation.
+
+Training details:
+
+- training images: 40
+- training patches: 5,600
+- patch size: 256 × 256 pixels
+- stride: 128 pixels
+- training epochs: 30
+- target taxon: *Globigerinoides ruber*
+- segmentation classes:
+  - 0: background
+  - 1: foraminiferal test interior
+  - 2: external boundary
+
+This model was developed to improve segmentation performance for *G. ruber* relative to the first foraminifera-specific model.
 
 ## SAM 2.1
 
