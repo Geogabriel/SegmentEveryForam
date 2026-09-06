@@ -48,4 +48,15 @@ from .morphometrics import (
     summarize_foram_morphometrics,
 )
 
+# Output management
+from .outputs import (
+    save_foram_morphometrics,
+)
+
+# Output management
+from .outputs import (
+    save_foram_morphometrics,
+    save_foram_summary,
+)
+
 __version__ = "0.1.0"
