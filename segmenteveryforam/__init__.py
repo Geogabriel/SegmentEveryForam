@@ -42,4 +42,28 @@ from .grain_utils import (
     extract_color_features,
 )
 
+# Foraminifera morphometrics analysis
+from .morphometrics import (
+    get_foram_morphometrics,
+    summarize_foram_morphometrics,
+)
+
+# Output management
+from .outputs import (
+    save_foram_morphometrics,
+)
+
+# Output management
+from .outputs import (
+    save_foram_morphometrics,
+    save_foram_summary,
+)
+
+# Plotting
+from .plotting import (
+    plot_morphometric_histogram,
+    plot_morphometric_boxplot,
+    plot_morphometric_profile,
+)
+
 __version__ = "0.1.0"
