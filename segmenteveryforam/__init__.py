@@ -42,4 +42,10 @@ from .grain_utils import (
     extract_color_features,
 )
 
+# Foraminifera morphometrics analysis
+from .morphometrics import (
+    get_foram_morphometrics,
+    summarize_foram_morphometrics,
+)
+
 __version__ = "0.1.0"
