@@ -268,7 +268,52 @@ python -c "import torch; import tensorflow as tf; import sam2; print('PyTorch:',
 
 TensorFlow may display informational messages when it starts. These messages do not necessarily indicate an installation problem. Look for an actual Python error or traceback.
 
+## Download the SAM 2.1 checkpoint
 
+SegmentEveryForam uses Meta's **SAM 2.1** model for instance segmentation and interactive refinement.
+
+The SAM 2.1 checkpoint is not included in the SegmentEveryForam repository because of its large file size. It must be downloaded separately.
+
+The current SegmentEveryForam workflow uses:
+
+```text
+sam2.1_hiera_large.pt
+```
+
+Download the **SAM 2.1 Hiera Large** checkpoint from the official Meta SAM 2 repository:
+
+[Meta SAM 2 repository](https://github.com/facebookresearch/sam2)
+
+In the Readme, Under **Getting Started → Download Checkpoints**, select:
+
+```text
+sam2.1_hiera_large.pt
+```
+
+After downloading the checkpoint, move it into the `models` folder inside the SegmentEveryForam repository.
+
+The final location should be:
+
+```text
+SegmentEveryForam/
+└── models/
+    └── sam2.1_hiera_large.pt
+```
+
+For a default Windows installation, this will typically be:
+
+```text
+C:\Users\<YOUR_USERNAME>\SegmentEveryForam\models\sam2.1_hiera_large.pt
+```
+
+Do not rename the checkpoint.
+
+You can confirm that the file is in the correct location from Anaconda Prompt:
+
+```bat
+dir models\sam2.1_hiera_large.pt
+```
+If the file is found, continue with the installation verification below.
 
 \## 8. Start JupyterLab
 
@@ -374,7 +419,7 @@ jupyter lab
 
 ```
 
-
+Before launching the workflow for the first time, download the SAM 2.1 Hiera Large checkpoint as described above and place it in the `models/` directory.
 
 Then open:
 

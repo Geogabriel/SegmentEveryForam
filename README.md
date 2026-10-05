@@ -1,5 +1,13 @@
 # SegmentEveryForam
 
+<p align="center">
+  <img src="docs/source/_static/images/Heroimage.png" width="85%">
+</p>
+
+<p align="center">
+  <em>Automated segmentation, interactive correction, and morphometric analysis of foraminifera from microscope images.</em>
+</p>
+
 **SegmentEveryForam** is a Python package for automated segmentation, interactive correction, and image-based morphometric analysis of foraminifera.
 
 The package is adapted from [Segmenteverygrain](https://github.com/zsylvester/segmenteverygrain), developed by Zoltán Sylvester and collaborators. Segmenteverygrain combines a U-Net-style convolutional neural network with the Segment Anything Model (SAM) to identify and segment individual objects in images.
@@ -83,7 +91,7 @@ Additional foraminifera-specific functionality is under development.
 
 ## Requirements
 
-Python 3.10 or higher is recommended.
+The current tested SegmentEveryForam environment uses **Python 3.10**.
 
 Major dependencies include:
 
@@ -100,24 +108,35 @@ Major dependencies include:
 - Shapely
 - Rasterio
 
+The recommended installation method uses the Conda environment provided with the repository.
+
 ## Installation
 
-Clone the SegmentEveryForam repository:
+For complete Windows installation instructions using Anaconda Prompt, see the **[Installation Guide](INSTALLATION.md)**.
+
+### Quick Start
+
+For users who already have Conda and Git installed:
 
 ```bash
 git clone https://github.com/Geogabriel/SegmentEveryForam.git
 cd SegmentEveryForam
+conda env create -f environment.yml
+conda activate segmenteveryforam
+jupyter lab
 ```
 
-SegmentEveryForam is currently under development, so installation instructions and environment files may continue to change as the package is developed.
+The `environment.yml` file is included when the repository is cloned. It does not need to be downloaded separately.
 
-For development use, install the package from the repository in editable mode:
+After JupyterLab opens, navigate to:
 
-```bash
-pip install -e .
+```text
+notebooks/SegmentEveryForam_workflow.ipynb
 ```
 
-The package can then be imported using:
+and run the workflow from the top downward.
+
+SegmentEveryForam can be imported using:
 
 ```python
 import segmenteveryforam as sef
@@ -131,23 +150,60 @@ import segmenteveryforam.interactions as sfi
 
 ## Models
 
-SegmentEveryForam combines a U-Net segmentation model with SAM 2.1.
+SegmentEveryForam combines U-Net-based semantic segmentation with SAM 2.1-based instance segmentation.
 
-The repository currently retains the original Segmenteverygrain U-Net model files:
+The repository currently includes the following U-Net models:
 
 ```text
 models/
 ├── seg_model.keras
-└── seg_model_smooth_labels.keras
+├── seg_model_smooth_labels.keras
+├── seg_model_foram_v1_30epochs.keras
+└── seg_model_foram_v2_G_ruber_30epochs.keras
 ```
 
-These models originate from the Segmenteverygrain project and were trained for general grain segmentation. They are retained for compatibility and development purposes.
+### Original Segmenteverygrain models
 
-Foraminifera-specific U-Net models are being developed separately for SegmentEveryForam.
+`seg_model.keras` and `seg_model_smooth_labels.keras` originate from the Segmenteverygrain project and were developed for general grain segmentation. They are retained for compatibility, comparison, and development purposes.
 
-SAM 2.1 model checkpoints are developed and distributed by Meta and are not SegmentEveryForam models.
+### SegmentEveryForam models
 
-See `models/README.md` for additional information about model provenance and usage.
+`seg_model_foram_v1_30epochs.keras` is a foraminifera-specific U-Net model produced by fine-tuning the segmentation workflow on annotated foraminiferal microscope images.
+
+`seg_model_foram_v2_G_ruber_30epochs.keras` is a subsequent fine-tuned model incorporating additional training focused on *Globigerinoides ruber*.
+
+These models are included in the repository and are available when SegmentEveryForam is cloned from GitHub.
+
+### SAM 2.1
+
+SegmentEveryForam uses SAM 2.1 for instance segmentation and interactive refinement.
+
+SAM 2.1 model checkpoints are developed and distributed by Meta and are **not included in this repository**. Users must obtain the required SAM 2.1 checkpoint separately before running the SAM-based segmentation workflow.
+
+The current workflow uses:
+
+```text
+sam2.1_hiera_large.pt
+```
+
+and expects the checkpoint to be placed in:
+
+```text
+models/sam2.1_hiera_large.pt
+```
+
+After setup, the `models/` directory should therefore contain:
+
+```text
+models/
+├── seg_model.keras
+├── seg_model_smooth_labels.keras
+├── seg_model_foram_v1_30epochs.keras
+├── seg_model_foram_v2_G_ruber_30epochs.keras
+└── sam2.1_hiera_large.pt
+```
+
+See the [Installation Guide](INSTALLATION.md) for setup instructions and `models/README.md` for additional information about model provenance and usage.
 
 ## Interactive editing
 
@@ -185,16 +241,28 @@ Current interactive controls include:
 
 ## Morphometric analysis
 
-Segmented objects can be measured using image-based morphometric properties such as:
+Following segmentation, interactive correction, and scale calibration, SegmentEveryForam can extract specimen-level morphometric measurements from individual foraminifera.
+
+Current measurements include:
 
 - area
-- major axis length
-- minor axis length
 - perimeter
+- major diameter
+- minor diameter
+- equivalent diameter
+- aspect ratio
+- elongation
+- roundness
+- circularity
+- perimeter-to-area ratio
 - orientation
-- centroid
+- centroid coordinates
 
-Additional derived measurements and foraminifera-specific analytical workflows are under development.
+Measurements can be converted from pixels to physical units using image-scale calibration.
+
+SegmentEveryForam can save specimen-level morphometric data for individual samples and generate summary statistics including the mean, median, standard deviation, percentiles, and interquartile range.
+
+When multiple samples of the same species have been processed, specimen-level data can also be combined across samples for subsequent visualization and analysis.
 
 ## Relationship to Segmenteverygrain
 
