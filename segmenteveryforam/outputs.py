@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 def save_foram_morphometrics(
     foram_data,
     output_dir="foram_morphometrics_outputs",
@@ -12,8 +11,12 @@ def save_foram_morphometrics(
 
     One CSV file is created per sample and species.
 
-    Existing data are preserved, while duplicate specimens from
-    reprocessed images are removed using image_id and foram_id.
+    Existing data within a sample are preserved, while duplicate
+    specimens from reprocessed images are removed using image_id
+    and foram_id.
+
+    After saving the current sample, all specimen-level files for
+    the current species are combined and returned.
 
     Parameters
     ----------
@@ -27,10 +30,10 @@ def save_foram_morphometrics(
     Returns
     -------
     pathlib.Path
-        Path to the saved CSV file.
+        Path to the saved sample CSV file.
 
     pandas.DataFrame
-        Combined specimen-level dataset saved to disk.
+        Combined specimen-level dataset for the current species.
     """
 
     required_columns = [
@@ -81,25 +84,32 @@ def save_foram_morphometrics(
     sample_id = str(sample_ids[0])
     species = str(species_values[0])
 
+    # --------------------------------------------------------
+    # Save/update current sample file
+    # --------------------------------------------------------
+
     foram_data_path = (
         output_dir
         / f"{sample_id}_{species}_foram_data.csv"
     )
 
     if foram_data_path.exists():
+
         existing_data = pd.read_csv(
             foram_data_path
         )
 
-        combined_data = pd.concat(
+        sample_data = pd.concat(
             [existing_data, foram_data],
             ignore_index=True,
         )
 
     else:
-        combined_data = foram_data.copy()
 
-    combined_data = combined_data.drop_duplicates(
+        sample_data = foram_data.copy()
+
+    # Remove duplicates within the current sample.
+    sample_data = sample_data.drop_duplicates(
         subset=[
             "image_id",
             "foram_id",
@@ -107,13 +117,67 @@ def save_foram_morphometrics(
         keep="last",
     )
 
-    combined_data = combined_data.reset_index(
+    sample_data = sample_data.reset_index(
         drop=True
     )
 
-    combined_data.to_csv(
+    sample_data.to_csv(
         foram_data_path,
         index=False,
+    )
+
+    # --------------------------------------------------------
+    # Combine all saved samples for the current species
+    # --------------------------------------------------------
+
+    species_files = sorted(
+        output_dir.glob(
+            f"*_{species}_foram_data.csv"
+        )
+    )
+
+    if not species_files:
+        raise RuntimeError(
+            f"No specimen files were found for species '{species}'."
+        )
+
+    combined_data = pd.concat(
+        [
+            pd.read_csv(file)
+            for file in species_files
+        ],
+        ignore_index=True,
+    )
+
+    # Safety check in case similarly named files are present.
+    combined_data = combined_data[
+        combined_data["species"].astype(str) == species
+    ].copy()
+
+    # A specimen is uniquely identified by its image and
+    # specimen number.
+    combined_data = combined_data.drop_duplicates(
+        subset=[
+            "sample_id",
+	    "image_id",
+            "foram_id",
+        ],
+        keep="last",
+    )
+
+    # Keep specimens organized by depth when available.
+    if "depth_ccsf" in combined_data.columns:
+        combined_data = combined_data.sort_values(
+            [
+                "depth_ccsf",
+                "sample_id",
+                "image_id",
+                "foram_id",
+            ]
+        )
+
+    combined_data = combined_data.reset_index(
+        drop=True
     )
 
     return foram_data_path, combined_data
