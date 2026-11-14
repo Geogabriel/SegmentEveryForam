@@ -1352,6 +1352,72 @@ _CHECKPOINT_PARAM_KEYS = (
 )
 
 
+def predict_with_box_prompts(
+    image, model, sam, *, min_grain_area=50, min_area=400, box_padding=4,
+    duplicate_iou=0.7,
+):
+    """Return specimen polygons, the U-Net prediction, and accepted box coordinates.
+
+    Each connected U-Net interior region supplies one box. SAM's highest-scoring
+    mask is retained, and overlapping duplicates are suppressed by mask IoU.
+    This method encodes the whole image in SAM once.
+    """
+    from rasterio.features import shapes
+    from rasterio.transform import Affine
+    from shapely.ops import unary_union
+
+    image = np.asarray(image)
+    prediction = predict_image(image, model, I=256)
+    components = measure.label(prediction[:, :, 1] >= 0.5, connectivity=1)
+    height, width = components.shape
+    regions = [r for r in regionprops(components) if r.area >= min_grain_area]
+    if not regions:
+        return [], prediction, np.empty((0, 4), dtype=np.float32)
+
+    predictor = SAM2ImagePredictor(sam)
+    predictor.set_image(image)
+    proposals = []
+    for region in regions:
+        y0, x0, y1, x1 = region.bbox
+        box = np.array([
+            max(0, x0 - box_padding), max(0, y0 - box_padding),
+            min(width - 1, x1 - 1 + box_padding),
+            min(height - 1, y1 - 1 + box_padding),
+        ], dtype=np.float32)
+        masks, scores, _ = predictor.predict(box=box, multimask_output=True)
+        index = int(np.argmax(scores))
+        mask = masks[index].astype(bool, copy=False)
+        area = int(mask.sum())
+        if area and area >= min_area:
+            proposals.append((float(scores[index]), mask, area, box))
+
+    kept = []
+    for proposal in sorted(proposals, key=lambda entry: entry[0], reverse=True):
+        _, mask, area, _ = proposal
+        for _, other, other_area, _ in kept:
+            intersection = np.count_nonzero(mask & other)
+            if intersection / (area + other_area - intersection) >= duplicate_iou:
+                break
+        else:
+            kept.append(proposal)
+
+    polygons = []
+    boxes = []
+    for _, mask, _, box in kept:
+        ys, xs = np.nonzero(mask)
+        y0, y1 = int(ys.min()), int(ys.max()) + 1
+        x0, x1 = int(xs.min()), int(xs.max()) + 1
+        crop = mask[y0:y1, x0:x1]
+        transform = Affine.translation(x0 - 0.5, y0 - 0.5)
+        polygons.append(unary_union([
+            shape(geometry) for geometry, _ in shapes(
+                crop.astype(np.uint8), mask=crop, transform=transform
+            )
+        ]))
+        boxes.append(box)
+    return polygons, prediction, np.asarray(boxes, dtype=np.float32).reshape(-1, 4)
+
+
 def predict_large_image(
     fname,
     model,
