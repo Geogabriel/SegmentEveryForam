@@ -91,7 +91,7 @@ notebooks point to the right places:
    cd segmenteverygrain
    jupyter lab
 
-Then open ``notebooks/Segment_every_grain.ipynb`` in the JupyterLab file
+Then open ``notebooks/SegmentEveryForam_workflow.ipynb`` in the JupyterLab file
 browser and run the cells from the top.
 
 Model files
@@ -99,12 +99,10 @@ Model files
 
 Two trained models are needed to run the segmentation workflow:
 
-- **U-Net model** (``models/seg_model_smooth_labels.keras``, ~25 MB): included
+- **U-Net model** (``models/best_val_loss.keras``, ~25 MB): included
   in the repository, so nothing needs to be downloaded if you cloned it.
 - **SAM 2.1 checkpoint** (``models/sam2.1_hiera_large.pt``, ~860 MB): *not*
-  included in the repository. The first cells of the
-  ``Segment_every_grain.ipynb`` notebook download it automatically into the
-  ``models`` folder. You can also download it manually from
+  included in the repository. Download it manually from
   `this link <https://huggingface.co/facebook/sam2.1-hiera-large/resolve/main/sam2.1_hiera_large.pt>`_
   and place it in the ``models`` folder.
 
@@ -166,7 +164,7 @@ Troubleshooting
 - ``FileNotFoundError`` **for model files when running the notebook:** make
   sure you started JupyterLab from the repository folder and opened the
   notebook in place — the notebook refers to the models as
-  ``../models/seg_model_smooth_labels.keras``, relative to the ``notebooks``
+  ``../models/best_val_loss.keras``, relative to the ``notebooks``
   folder.
 - **The interactive editing window does not respond:** the ``GrainPlot``
   interface requires an interactive matplotlib backend. The notebook sets this
@@ -174,6 +172,6 @@ Troubleshooting
   environments); make sure that cell has been run.
 - **Old U-Net models fail to load:** as of v0.4.0, the U-Net model outputs raw
   logits, and models trained with v0.3.0 or earlier (e.g., ``seg_model.keras``)
-  are incompatible. Use ``seg_model_smooth_labels.keras`` or retrain your
+  are incompatible. Use ``best_val_loss.keras`` or retrain your
   custom models. Similarly, models saved with Keras 2 do not load under the
   current Keras 3-based package.

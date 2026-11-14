@@ -152,27 +152,12 @@ import segmenteveryforam.interactions as sfi
 
 SegmentEveryForam combines U-Net-based semantic segmentation with SAM 2.1-based instance segmentation.
 
-The repository currently includes the following U-Net models:
+The repository includes two U-Net checkpoints:
 
-```text
-models/
-├── seg_model.keras
-├── seg_model_smooth_labels.keras
-├── seg_model_foram_v1_30epochs.keras
-└── seg_model_foram_v2_G_ruber_30epochs.keras
-```
+- `best_val_loss.keras` is the default workflow checkpoint, selected by validation loss during *Globigerinoides ruber* fine-tuning.
+- `seg_model_foram_v1_30epochs.keras` is the first foraminifera-specific fine-tuned checkpoint.
 
-### Original Segmenteverygrain models
-
-`seg_model.keras` and `seg_model_smooth_labels.keras` originate from the Segmenteverygrain project and were developed for general grain segmentation. They are retained for compatibility, comparison, and development purposes.
-
-### SegmentEveryForam models
-
-`seg_model_foram_v1_30epochs.keras` is a foraminifera-specific U-Net model produced by fine-tuning the segmentation workflow on annotated foraminiferal microscope images.
-
-`seg_model_foram_v2_G_ruber_30epochs.keras` is a subsequent fine-tuned model incorporating additional training focused on *Globigerinoides ruber*.
-
-These models are included in the repository and are available when SegmentEveryForam is cloned from GitHub.
+The inherited examples and general-grain checkpoints are available in the [upstream Segmenteverygrain repository](https://github.com/zsylvester/segmenteverygrain).
 
 ### SAM 2.1
 
@@ -196,10 +181,8 @@ After setup, the `models/` directory should therefore contain:
 
 ```text
 models/
-├── seg_model.keras
-├── seg_model_smooth_labels.keras
+├── best_val_loss.keras
 ├── seg_model_foram_v1_30epochs.keras
-├── seg_model_foram_v2_G_ruber_30epochs.keras
 └── sam2.1_hiera_large.pt
 ```
 

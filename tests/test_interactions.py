@@ -193,9 +193,9 @@ class TestGrainPlot(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.image = sfi.load_image('examples/torrey_pines.jpg')
+        cls.image = sfi.load_image('tests/fixtures/torrey_pines.jpg')
         cls.grains = sfi.load_grains(
-            'examples/interactive_edit/torrey_pines_grains.geojson',
+            'tests/fixtures/torrey_pines_grains.geojson',
             image=cls.image)
         cls.plot = sfi.GrainPlot(cls.grains, cls.image)
 
@@ -225,9 +225,9 @@ class TestDownscaledGrainPlot(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.image = sfi.load_image('examples/torrey_pines.jpg')
+        cls.image = sfi.load_image('tests/fixtures/torrey_pines.jpg')
         cls.grains = sfi.load_grains(
-            'examples/interactive_edit/torrey_pines_grains.geojson',
+            'tests/fixtures/torrey_pines_grains.geojson',
             image=cls.image)
         cls.testdata = cls.grains[0].measure()
         cls.testxy = cls.grains[0].xy
