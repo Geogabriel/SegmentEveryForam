@@ -8,6 +8,8 @@ The best way to use the `segmenteverygrain` package is to run the `Segment_every
 
 The notebook goes through the steps of loading the models, running the segmentation, interactively updating the result, and saving the grain data and the mask. The text below summarizes the steps that you need to take to run the segmentation.
 
+The examples below describe the upstream Segmenteverygrain workflow. Get its example data and general-grain checkpoints from the `upstream repository <https://github.com/zsylvester/segmenteverygrain>`_. For foraminifera, use ``notebooks/SegmentEveryForam_workflow.ipynb`` and its bundled ``best_val_loss.keras`` checkpoint.
+
 Loading the models
 ~~~~~~~~~~~~~~~~~~
 
