@@ -1360,11 +1360,11 @@ def predict_with_box_prompts(
 
     Each connected U-Net interior region supplies one box. SAM's highest-scoring
     mask is retained, and overlapping duplicates are suppressed by mask IoU.
-    This method encodes the whole image in SAM once.
+    Each result uses the largest connected polygon so it can be edited and
+    measured as one specimen. The whole image is encoded in SAM once.
     """
     from rasterio.features import shapes
     from rasterio.transform import Affine
-    from shapely.ops import unary_union
 
     image = np.asarray(image)
     prediction = predict_image(image, model, I=256)
@@ -1409,11 +1409,18 @@ def predict_with_box_prompts(
         x0, x1 = int(xs.min()), int(xs.max()) + 1
         crop = mask[y0:y1, x0:x1]
         transform = Affine.translation(x0 - 0.5, y0 - 0.5)
-        polygons.append(unary_union([
-            shape(geometry) for geometry, _ in shapes(
-                crop.astype(np.uint8), mask=crop, transform=transform
-            )
-        ]))
+        parts = []
+        for geometry, _ in shapes(crop.astype(np.uint8), mask=crop, transform=transform):
+            polygon = shape(geometry)
+            if not polygon.is_valid:
+                polygon = polygon.buffer(0)
+            if polygon.geom_type == "MultiPolygon":
+                parts.extend(polygon.geoms)
+            elif not polygon.is_empty:
+                parts.append(polygon)
+        if not parts:
+            continue
+        polygons.append(max(parts, key=lambda polygon: polygon.area))
         boxes.append(box)
     return polygons, prediction, np.asarray(boxes, dtype=np.float32).reshape(-1, 4)
 
