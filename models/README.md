@@ -26,7 +26,7 @@ This model was trained using multiple foraminiferal images and serves as the fir
 
 ### `best_val_loss.keras`
 
-Default workflow checkpoint. Fine-tuned from the v1 model on *Globigerinoides ruber* images and selected by lowest validation loss during the 100-epoch run. The dataset was split by original microscope image before patch extraction.
+Default workflow checkpoint. Fine-tuned from the v1 model on *Globigerinoides ruber* images and selected by lowest validation loss during the 100-epoch run. The dataset was split by original microscope image before patch extraction. See the [Colab training notebook](../notebooks/SEF_v2_100epochs.ipynb) for the training code and input layout.
 
 ## SAM 2.1
 
