@@ -23,7 +23,7 @@ SegmentEveryForam extends this framework toward foraminiferal image analysis whi
 | --- | --- | --- |
 | [Local Jupyter notebook](notebooks/SegmentEveryForam_workflow.ipynb) | Notebook cells and the interactive `ForamPlot` editor | Your computer |
 | [Google Colab notebook](https://colab.research.google.com/github/Geogabriel/SegmentEveryForam/blob/main/notebooks/SegmentEveryForam_colab.ipynb) | Notebook cells in your browser | A Colab GPU runtime |
-| [Gradio web app prototype](https://github.com/Geogabriel/SegmentEveryForam/tree/browser-workflow-prototype#try-it-in-colab) | A dedicated page for uploads, mask edits, calibration, and exports | A Colab GPU runtime or a GPU workstation |
+| [Gradio web app prototype](#try-it-in-colab) | A dedicated page for uploads, mask edits, calibration, and exports | A Colab GPU runtime or a GPU workstation |
 
 The Jupyter workflow is covered in [Installation](#installation). For the Colab notebook, select **Runtime → Change runtime type → GPU**, then follow the notebook from the top.
 
@@ -171,7 +171,7 @@ Start a fresh Colab notebook and select **Runtime → Change runtime type → GP
 %pip -q install 'gradio>=5.49,<6' rtree rasterio
 %env SAM2_BUILD_CUDA=0
 %pip -q install --no-build-isolation 'git+https://github.com/facebookresearch/sam2.git'
-!git clone --single-branch --branch browser-workflow-prototype https://github.com/Geogabriel/SegmentEveryForam.git
+!git clone https://github.com/Geogabriel/SegmentEveryForam.git
 %cd SegmentEveryForam
 ```
 
@@ -191,7 +191,7 @@ You can reopen the same URL while the app and Colab runtime are active. The demo
 
 ### Run on a GPU workstation
 
-From this branch of the repository, with the SegmentEveryForam environment activated and CUDA-enabled PyTorch installed, run:
+From the repository root, with the SegmentEveryForam environment activated and CUDA-enabled PyTorch installed, run:
 
 ```bash
 python -m pip install 'gradio>=5.49,<6'
