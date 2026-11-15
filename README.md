@@ -16,6 +16,16 @@ SegmentEveryForam extends this framework toward foraminiferal image analysis whi
 
 > **Development status:** SegmentEveryForam is currently under active development.
 
+## Choose a workflow
+
+| Workflow | Interface | Where the models run |
+| --- | --- | --- |
+| [Local Jupyter notebook](notebooks/SegmentEveryForam_workflow.ipynb) | Notebook cells and the interactive `ForamPlot` editor | Your computer |
+| [Google Colab notebook](https://colab.research.google.com/github/Geogabriel/SegmentEveryForam/blob/main/notebooks/SegmentEveryForam_colab.ipynb) | Notebook cells in your browser | A Colab GPU runtime |
+| [Gradio web app prototype](https://github.com/Geogabriel/SegmentEveryForam/tree/browser-workflow-prototype#try-it-in-colab) | A dedicated page for uploads, mask edits, calibration, and exports | A Colab GPU runtime or a GPU workstation |
+
+The Jupyter workflow is covered in [Installation](#installation). For the Colab notebook, select **Runtime → Change runtime type → GPU**, then follow the notebook from the top.
+
 ## Overview
 
 SegmentEveryForam uses a two-stage segmentation workflow:
