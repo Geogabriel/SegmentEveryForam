@@ -1,7 +1,8 @@
 # SegmentEveryForam
 
 <p align="center">
-  <img src="docs/source/_static/images/Heroimage.png" width="85%">
+  <img src="docs/source/_static/images/unet-sam-overlay-a.png" alt="U-Net prediction overlay and SAM box prompts on a foraminifera microscope image" width="48%">
+  <img src="docs/source/_static/images/unet-sam-overlay-b.png" alt="U-Net prediction overlay and SAM box prompts on a second foraminifera microscope image" width="48%">
 </p>
 
 <p align="center">
