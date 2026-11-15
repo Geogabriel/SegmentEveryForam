@@ -148,6 +148,47 @@ The interactive module can be imported using:
 import segmenteveryforam.interactions as sfi
 ```
 
+## Browser prototype
+
+The browser interface runs one image at a time on a machine with a CUDA GPU. It uses the same fine-tuned U-Net, SAM 2.1 Large, and specimen export workflow as the Colab notebook.
+
+### Try it in Colab
+
+Start a fresh Colab notebook and select **Runtime → Change runtime type → GPU**. Run this installation cell:
+
+```python
+%pip -q install 'gradio>=5.49,<6' rtree rasterio
+%env SAM2_BUILD_CUDA=0
+%pip -q install --no-build-isolation 'git+https://github.com/facebookresearch/sam2.git'
+!git clone --single-branch --branch browser-workflow-prototype https://github.com/Geogabriel/SegmentEveryForam.git
+%cd SegmentEveryForam
+```
+
+Then run the launch cell and open the Gradio link it prints. Use `sef` as the username and the password you enter below. The link uses a Gradio tunnel and the app runs while the Colab session is active.
+
+```python
+from getpass import getpass
+from web_app import build_app
+
+password = getpass('Create a password for this demo: ')
+if not password.strip():
+    raise ValueError('Enter a password before opening the demo link.')
+build_app().launch(share=True, auth=('sef', password), max_file_size='50mb')
+```
+
+### Run on a GPU workstation
+
+From this branch of the repository, with the SegmentEveryForam environment activated and CUDA-enabled PyTorch installed, run:
+
+```bash
+python -m pip install 'gradio>=5.49,<6'
+python web_app.py
+```
+
+Open the local URL printed in the terminal. This launch listens on localhost.
+
+Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downloads both model checkpoints. To edit the numbered overlay, select a review tool, then click a mask to remove it or click a missed specimen to add it. For calibration, click both ends of the scale bar and enter its printed length in micrometers, or enter a known calibration in pixels per meter. Download the ZIP after exporting.
+
 ## Models
 
 SegmentEveryForam combines U-Net-based semantic segmentation with SAM 2.1-based instance segmentation.
