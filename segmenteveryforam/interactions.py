@@ -466,6 +466,8 @@ class ForamPlot(object):
         self.px_per_m = px_per_m
         self.scale_m = scale_m
         self.scale_line = None  # Will hold the matplotlib Line2D object
+        self.scale_label = None  # Text showing the scale line's length
+        self.scale_px = None  # Scale line length in original-image pixels
         self.scale_drawing = False  # Track if currently drawing scale line
         self.scale_start = None  # Starting point of scale line
 
@@ -639,6 +641,8 @@ class ForamPlot(object):
         info_grain = self.info_grain
         info_patch = [info_grain.patch] if info_grain is not None else []
         scale_line = [self.scale_line] if self.scale_line is not None else []
+        if self.scale_label is not None:
+            scale_line.append(self.scale_label)
         artists = ([g.patch for g in self.selected_grains]
                    + info_patch
                    + self.points
@@ -724,6 +728,55 @@ class ForamPlot(object):
         return self.grains
 
     # Measurements -----------------------------------------------------------
+    def scale_label_text(self, px: float) -> str:
+        '''
+        Describe a scale line of `px` original-image pixels.
+
+        Shows the known scale-bar length and the resulting calibration when
+        `scale_m` was set; otherwise asks for the printed length.
+        '''
+        if self.scale_m == 1.:
+            return f'{px:.1f} px\nEnter the printed length as scale_bar_um'
+        um = self.scale_m * 1e6
+        return f'{px:.1f} px = {um:g} µm\n({px / um:.4g} px per µm)'
+
+    def show_scale_label(self, start, end, text: str):
+        '''
+        Show `text` beside the scale line drawn from `start` to `end`.
+        '''
+        if self.scale_label is not None:
+            self.scale_label.remove()
+        x = (start[0] + end[0]) / 2
+        y = (start[1] + end[1]) / 2
+        self.scale_label = self.ax.annotate(
+            text, (x, y), xytext=(0, -12), textcoords='offset points',
+            ha='center', va='top', color='white', fontsize=10,
+            fontweight='bold', animated=self.blit, zorder=1001,
+            bbox=dict(facecolor='black', alpha=0.7, edgecolor='none', pad=2))
+
+    def set_scale_length(self, scale_m: float):
+        '''
+        Set the real length of the drawn scale line, in meters.
+
+        Recalculates `px_per_m` from the line already drawn, so the line does
+        not need to be redrawn after entering its printed length.
+
+        Parameters
+        ----------
+        scale_m : float
+            Printed length of the scale bar, in meters.
+        '''
+        if not np.isfinite(scale_m) or scale_m <= 0:
+            raise ValueError('Scale-bar length must be positive and finite.')
+        self.scale_m = scale_m
+        if self.scale_px is None:
+            return
+        self.px_per_m = self.scale_px / scale_m
+        start, end = np.transpose(self.scale_line.get_data())
+        self.show_scale_label(start, end, self.scale_label_text(self.scale_px))
+        self.update_info(self.info_grain)
+        self.update()
+
     def draw_scale_line(self, start, end):
         '''
         Draw a scale bar line and calculate the scale based on its length.
@@ -762,6 +815,8 @@ class ForamPlot(object):
         # Convert to pixels per meter using a known scale bar length
         px_per_m = px / self.scale_m / self.scale
         self.px_per_m = px_per_m
+        self.scale_px = px / self.scale
+        self.show_scale_label(start, end, self.scale_label_text(self.scale_px))
         logger.info(f'Scale set to {px_per_m:.2f} pixels per meter.')
         
         # Update the info box using the new units
@@ -1206,6 +1261,11 @@ class ForamPlot(object):
                 animated=self.blit,
                 zorder=1000  # Draw on top of everything
             )[0]
+            dx = event.xdata - self.scale_start[0]
+            dy = event.ydata - self.scale_start[1]
+            px = np.sqrt(dx * dx + dy * dy) / self.scale
+            self.show_scale_label(
+                self.scale_start, (event.xdata, event.ydata), f'{px:.1f} px')
             
             # Update display
             self.update()

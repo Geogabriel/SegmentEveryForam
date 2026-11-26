@@ -12,8 +12,22 @@ point, see the
 
 ## [Unreleased]
 
+### Added
+
+- The `ForamPlot` editor labels the scale line with its length in pixels
+  while drawing and, when the printed length is known, with the resulting
+  calibration (for example `257.3 px = 500 µm`). `set_scale_length()`
+  sets the printed length after drawing.
+- The Colab notebook's export can skip specimen crops and masks
+  (`export_crops_and_masks = False`) and then downloads only the
+  measurements CSV.
+
 ### Changed
 
+- The Colab notebook checks for a GPU before installing, requests a T4 GPU,
+  and restarts the session automatically after installation so the browser
+  editor loads without a manual restart.
+- The Colab export prints the scale-bar length and calibration in µm.
 - `requirements.txt` now matches the package's dependencies and no longer
   installs the original `segmenteverygrain` package.
 - `environment_macos.yml` now creates a `segmenteveryforam` environment and
@@ -25,6 +39,11 @@ point, see the
 - The Segmenteverygrain documentation site sources in `docs/`, the example
   images used only by those pages, and the workflow that built them. The
   README images in `docs/source/_static/images/` are kept.
+
+### Fixed
+
+- The Colab notebook's browser-editor check no longer shows a traceback with
+  current Matplotlib versions.
 
 ## [0.1.0] - 2026-11-26
 
