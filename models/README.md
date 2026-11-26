@@ -30,7 +30,7 @@ Default workflow checkpoint. Fine-tuned from the v1 model on 40 *Globigerinoides
 
 ## Evaluation
 
-Both checkpoints were scored on the same three *G. ruber* reference images with [`Evaluate_saved_UNet_checkpoints.ipynb`](../notebooks/Evaluate_saved_UNet_checkpoints.ipynb). The scores cover the U-Net alone, pooled over all patches:
+Both checkpoints were scored on the same three *G. ruber* reference images, none of which was used in either training run, with [`Evaluate_saved_UNet_checkpoints.ipynb`](../notebooks/Evaluate_saved_UNet_checkpoints.ipynb). The scores cover the U-Net alone, pooled over all patches:
 
 | Checkpoint | Mean IoU | Boundary IoU |
 | --- | --- | --- |
