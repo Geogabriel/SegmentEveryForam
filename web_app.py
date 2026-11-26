@@ -2,6 +2,7 @@
 
 import math
 import os
+import re
 from functools import lru_cache
 from pathlib import Path
 from shutil import make_archive, rmtree
@@ -11,8 +12,7 @@ from uuid import uuid4
 from zipfile import is_zipfile
 
 import gradio as gr
-import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 
 UNET_URL = (
@@ -62,25 +62,38 @@ def models():
     )
 
 
+def label_font(size):
+    try:
+        return ImageFont.load_default(size=size)
+    except TypeError:  # Pillow < 10.1 has only a small bitmap font.
+        return ImageFont.load_default()
+
+
 def review_image(session):
     canvas = Image.fromarray(session["image"]).convert("RGBA")
+    # Scale labels and markers with the image so they stay legible when the
+    # preview is shrunk to fit the page.
+    unit = max(1, round(max(canvas.size) / 1000))
     overlay = Image.new("RGBA", canvas.size)
     draw = ImageDraw.Draw(overlay)
     for index, polygon in enumerate(session["polygons"]):
         color = COLORS[index % len(COLORS)]
-        draw.polygon(list(polygon.exterior.coords), fill=(*color, 65), outline=(*color, 255), width=2)
+        draw.polygon(list(polygon.exterior.coords), fill=(*color, 65), outline=(*color, 255), width=2 * unit)
         for ring in polygon.interiors:
-            draw.polygon(list(ring.coords), fill=(0, 0, 0, 0), outline=(*color, 255), width=2)
+            draw.polygon(list(ring.coords), fill=(0, 0, 0, 0), outline=(*color, 255), width=2 * unit)
     canvas = Image.alpha_composite(canvas, overlay).convert("RGB")
     draw = ImageDraw.Draw(canvas)
+    font = label_font(16 * unit)
     for index, polygon in enumerate(session["polygons"], start=1):
         point = polygon.representative_point()
-        draw.text((point.x, point.y), str(index), anchor="mm", fill="white", stroke_width=2, stroke_fill="black")
+        draw.text((point.x, point.y), str(index), font=font, anchor="mm", fill="white",
+                  stroke_width=2 * unit, stroke_fill="black")
     points = session["points"]
     if len(points) == 2:
-        draw.line(points, fill="yellow", width=3)
+        draw.line(points, fill="yellow", width=3 * unit)
+    radius = 5 * unit
     for x, y in points:
-        draw.ellipse((x - 4, y - 4, x + 4, y + 4), fill="yellow", outline="black")
+        draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill="yellow", outline="black", width=unit)
     return canvas
 
 
@@ -125,7 +138,8 @@ def edit(session, mode, event: gr.SelectData):
             raise gr.Error("Choose a different point for the other end of the scale bar.")
         else:
             points.append((x, y))
-            status = f"Scale bar spans {math.dist(*points):.2f} pixels. Enter its printed length below."
+            status = (f"Scale bar spans {math.dist(*points):.1f} pixels. "
+                      "Enter its printed length in Printed scale-bar length (µm).")
     else:
         from shapely.geometry import Point, Polygon
 
@@ -162,13 +176,18 @@ def positive(value, label):
     return value
 
 
-def export(session, sample, species, depth, age, scale_um, pixels_per_meter):
+def export(session, sample, species, depth, age, scale_um, pixels_per_meter, crops_and_masks=True):
     if not session or not session["polygons"]:
         raise gr.Error("Segment an image and keep at least one specimen before exporting.")
     if pixels_per_meter is None:
         if len(session["points"]) != 2:
             raise gr.Error("Mark both scale-bar endpoints or enter a known calibration in pixels per meter.")
-        pixels_per_meter = math.dist(*session["points"]) / (positive(scale_um, "scale-bar length") * 1e-6)
+        bar_px = math.dist(*session["points"])
+        scale_um = positive(scale_um, "scale-bar length")
+        pixels_per_meter = bar_px / (scale_um * 1e-6)
+        scale_note = f"Scale bar: {bar_px:.1f} px = {scale_um:g} µm. "
+    else:
+        scale_note = "Using the known calibration. "
     pixels_per_meter = positive(pixels_per_meter, "calibration in pixels per meter")
 
     import pandas as pd
@@ -187,22 +206,33 @@ def export(session, sample, species, depth, age, scale_um, pixels_per_meter):
     if not session["directory"]:
         session["directory"] = mkdtemp(prefix="sef-web-")
     directory = Path(session["directory"])
-    with TemporaryDirectory(dir=directory) as temp:
-        result = Path(temp) / "results"
-        result.mkdir()
-        csv = result / "foram_data.csv"
-        data.to_csv(csv, index=False)
-        output = export_specimens(image, grains, data, metadata, csv, output_dir=result / "specimens")
-        manifest_file = output / "manifest.csv"
-        manifest = pd.read_csv(manifest_file)
-        manifest["source_image"] = name
-        manifest["morphometrics_csv"] = csv.name
-        manifest.to_csv(manifest_file, index=False)
-        pending = make_archive(str(Path(temp) / "pending"), "zip", root_dir=result)
-        archive = directory / f"{uuid4().hex[:8]}" / "SegmentEveryForam_results.zip"
-        archive.parent.mkdir()
-        Path(pending).replace(archive)
-    return session, str(archive), f"Exported {len(data)} specimens at {pixels_per_meter:,.2f} pixels per meter."
+    destination = directory / f"{uuid4().hex[:8]}"
+    destination.mkdir()
+    if not crops_and_masks:
+        safe_name = re.sub(r"[^\w.-]+", "_", metadata["sample_id"]).strip("._") or "sample"
+        download = destination / f"{safe_name}_foram_data.csv"
+        data.to_csv(download, index=False)
+        contents = "measurements"
+    else:
+        with TemporaryDirectory(dir=directory) as temp:
+            result = Path(temp) / "results"
+            result.mkdir()
+            csv = result / "foram_data.csv"
+            data.to_csv(csv, index=False)
+            output = export_specimens(image, grains, data, metadata, csv, output_dir=result / "specimens")
+            manifest_file = output / "manifest.csv"
+            manifest = pd.read_csv(manifest_file)
+            manifest["source_image"] = name
+            manifest["morphometrics_csv"] = csv.name
+            manifest.to_csv(manifest_file, index=False)
+            pending = make_archive(str(Path(temp) / "pending"), "zip", root_dir=result)
+            download = destination / "SegmentEveryForam_results.zip"
+            Path(pending).replace(download)
+        contents = "measurements, crops, and masks"
+    return session, str(download), (
+        f"Exported {contents} for {len(data)} specimens. {scale_note}"
+        f"Calibration: {pixels_per_meter * 1e-6:.4g} px per µm."
+    )
 
 
 def build_app():
@@ -214,21 +244,22 @@ def build_app():
                 upload = gr.File(label="Microscope image", file_types=[".png", ".jpeg", ".jpg", ".tif", ".tiff"])
                 run = gr.Button("Run segmentation", variant="primary")
                 mode = gr.Radio([REVIEW, ADD, REMOVE, CALIBRATE], value=REVIEW, label="Review tool")
-                scale = gr.Number(label="Printed scale-bar length (µm)")
-                known = gr.Number(label="Known calibration (pixels per meter, optional override)")
+                scale = gr.Number(label="Printed scale-bar length (µm)", value=None)
+                known = gr.Number(label="Known calibration (pixels per meter, optional override)", value=None)
             with gr.Column(scale=3):
                 preview = gr.Image(label="Specimen masks", interactive=False, height=625, format="png")
                 status = gr.Textbox(label="Status", interactive=False)
         with gr.Row():
             sample = gr.Textbox(label="Sample ID")
             species = gr.Textbox(label="Species")
-            depth = gr.Number(label="Depth (m CCSF)")
-            age = gr.Number(label="Age (Ma)")
-        save = gr.Button("Export measurements, crops, and masks", variant="primary")
-        download = gr.File(label="Results ZIP", interactive=False)
+            depth = gr.Number(label="Depth (m CCSF)", value=None)
+            age = gr.Number(label="Age (Ma)", value=None)
+        crops = gr.Checkbox(value=True, label="Include specimen crops and masks (ZIP). Untick to export only the measurements CSV.")
+        save = gr.Button("Export", variant="primary")
+        download = gr.File(label="Results", interactive=False)
         run.click(segment, [upload, session], [session, preview, sample, scale, known, download, status], concurrency_id="workflow")
         preview.select(edit, [session, mode], [session, preview, download, status], concurrency_id="workflow")
-        save.click(export, [session, sample, species, depth, age, scale, known], [session, download, status], concurrency_id="workflow")
+        save.click(export, [session, sample, species, depth, age, scale, known, crops], [session, download, status], concurrency_id="workflow")
     return app.queue()
 
 

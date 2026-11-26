@@ -164,7 +164,7 @@ The browser interface runs one image at a time on a machine with a CUDA GPU. It 
 
 ### Try it in Colab
 
-Start a fresh Colab notebook and select **Runtime → Change runtime type → GPU**. Run this installation cell:
+Start a fresh Colab notebook and select **Runtime → Change runtime type → T4 GPU**. Run this installation cell:
 
 ```python
 %pip -q install 'gradio>=5.49,<6' rtree rasterio
@@ -173,6 +173,8 @@ Start a fresh Colab notebook and select **Runtime → Change runtime type → GP
 !git clone https://github.com/Geogabriel/SegmentEveryForam.git
 %cd SegmentEveryForam
 ```
+
+The installation may print red `ERROR: pip's dependency resolver` lines about other Colab packages, such as `google-genai` or `hf-gradio`, because the app uses Gradio 5 while Colab ships a newer version. They do not affect the app.
 
 Run the launch cell below and open the Gradio link it prints. Sign in as `sef` with the password you enter at launch. The app asks for a password each time you launch it. You can reuse one or choose a new one.
 
@@ -199,7 +201,7 @@ python web_app.py
 
 Open the local URL printed in the terminal. This launch listens on localhost.
 
-Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downloads both model checkpoints. To edit the numbered overlay, select a review tool, then click a mask to remove it or click a missed specimen to add it. For calibration, click both ends of the scale bar and enter its printed length in micrometers, or enter a known calibration in pixels per meter. Download the ZIP after exporting.
+Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downloads both model checkpoints. To edit the numbered overlay, select a review tool, then click a mask to remove it or click a missed specimen to add it. For calibration, select **Mark scale-bar endpoints**, click both ends of the scale bar, and enter its printed length in micrometers, or enter a known calibration in pixels per meter. Select **Export** and download the results: a ZIP with the measurements, specimen crops and masks, or, with **Include specimen crops and masks** unticked, only the measurements CSV.
 
 ## Models
 
