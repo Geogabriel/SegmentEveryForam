@@ -1786,7 +1786,24 @@ def filter_grains_by_points(grains: list, points: list, unique: False) -> tuple[
     return point_grains, point_found
 
 
-def filter_grains_by_props(grains: list, **props):
+def filter_grains_by_props(grains: list, **props) -> list:
+    '''
+    Keep the grains whose measurements pass every given test.
+
+    Parameters
+    ----------
+    grains : list
+        Measured Grain objects.
+    **props : callable
+        Measurement name and a function returning True for values to keep,
+        for example ``area=lambda a: a > 100``.
+
+    Returns
+    -------
+    list
+        Grains that pass all tests, in their original order.
+    '''
+    filtered_grains = list(grains)
     for prop, func in props.items():
         filtered_grains = [g for g in filtered_grains if func(g.data[prop])]
     return filtered_grains

@@ -187,6 +187,20 @@ class TestGrainObject(unittest.TestCase):
     def test_rescale(self):
         pass
 
+    def test_filter_grains_by_props(self):
+        small, large = sorted(self.grains, key=lambda g: g.data['area'])
+        cutoff = (small.data['area'] + large.data['area']) / 2
+        self.assertEqual(
+            sfi.filter_grains_by_props(self.grains, area=lambda a: a > cutoff),
+            [large])
+        self.assertEqual(
+            sfi.filter_grains_by_props(
+                self.grains,
+                area=lambda a: a > 0,
+                perimeter=lambda p: p < small.data['perimeter'] + 1e-9),
+            [small])
+        self.assertEqual(sfi.filter_grains_by_props(self.grains), self.grains)
+
 
 class TestGrainPlot(unittest.TestCase):
     ''' Test GrainPlot object methods. '''
