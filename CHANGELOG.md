@@ -31,6 +31,9 @@ point, see the
   editor loads without a manual restart.
 - The Colab export prints the scale-bar length and calibration in µm. The
   browser prototype's export message does the same.
+- The browser prototype now uses Gradio 6, the version Colab includes, so
+  installing it in Colab no longer downgrades Gradio or prints dependency
+  errors.
 - `requirements.txt` now matches the package's dependencies and no longer
   installs the original `segmenteverygrain` package.
 - `environment_macos.yml` now creates a `segmenteveryforam` environment and

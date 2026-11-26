@@ -167,14 +167,12 @@ The browser interface runs one image at a time on a machine with a CUDA GPU. It 
 Start a fresh Colab notebook and select **Runtime → Change runtime type → T4 GPU**. Run this installation cell:
 
 ```python
-%pip -q install 'gradio>=5.49,<6' rtree rasterio
+%pip -q install 'gradio>=6,<7' rtree rasterio
 %env SAM2_BUILD_CUDA=0
 %pip -q install --no-build-isolation 'git+https://github.com/facebookresearch/sam2.git'
 !git clone https://github.com/Geogabriel/SegmentEveryForam.git
 %cd SegmentEveryForam
 ```
-
-The installation may print red `ERROR: pip's dependency resolver` lines about other Colab packages, such as `google-genai` or `hf-gradio`, because the app uses Gradio 5 while Colab ships a newer version. They do not affect the app.
 
 Run the launch cell below and open the Gradio link it prints. Sign in as `sef` with the password you enter at launch. The app asks for a password each time you launch it. You can reuse one or choose a new one.
 
@@ -195,7 +193,7 @@ You can reopen the same URL while the app and Colab runtime are active. The demo
 From the repository root, with the SegmentEveryForam environment activated and CUDA-enabled PyTorch installed, run:
 
 ```bash
-python -m pip install 'gradio>=5.49,<6'
+python -m pip install 'gradio>=6,<7'
 python web_app.py
 ```
 
