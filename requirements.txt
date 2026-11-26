@@ -9,7 +9,6 @@ pillow
 scikit-image
 scikit-learn
 pandas
-geopandas
 tqdm
 networkx
 shapely

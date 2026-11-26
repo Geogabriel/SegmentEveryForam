@@ -63,6 +63,7 @@ point, see the
 - The unused `Heroimage.png` and Segmenteverygrain's georeferencing notebook
   (`Segment_every_grain_w_georeferencing.ipynb`), which is not used for
   foraminifera.
+- `geopandas` from the dependencies. Only the georeferencing notebook used it.
 
 ### Fixed
 

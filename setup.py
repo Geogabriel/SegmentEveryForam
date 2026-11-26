@@ -36,7 +36,6 @@ setuptools.setup(
         "scikit-learn",
         "rtree",
         "pandas",
-        "geopandas",
         "keras",
     ],
     license_files=[],
