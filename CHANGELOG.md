@@ -23,6 +23,13 @@ point, see the
   measurements CSV.
 - The browser prototype has the same option: untick **Include specimen crops
   and masks** to export only the measurements CSV.
+- `load_unet()` loads a U-Net checkpoint so that it gives the same results on
+  every Keras backend. On PyTorch, plain `keras.saving.load_model` shifts the
+  U-Net's upsampling layers by one pixel, which changed 3–4% of predicted
+  pixels and most of the boundary class. The Colab notebook and the browser
+  prototype now use `load_unet()`.
+- `tools/compare_keras_backends.py` compares U-Net predictions between the
+  TensorFlow and PyTorch backends.
 
 ### Changed
 
