@@ -13,6 +13,7 @@ type: software
 authors:
   - given-names: Gabriel
     family-names: Ojo
+    orcid: "https://orcid.org/0000-0001-7956-9125"
 version: 0.1.0
 date-released: "2026-11-25"
 license: Apache-2.0
