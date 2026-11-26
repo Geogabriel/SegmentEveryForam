@@ -21,13 +21,16 @@ point, see the
 - The Colab notebook's export can skip specimen crops and masks
   (`export_crops_and_masks = False`) and then downloads only the
   measurements CSV.
+- The browser prototype has the same option: untick **Include specimen crops
+  and masks** to export only the measurements CSV.
 
 ### Changed
 
 - The Colab notebook checks for a GPU before installing, requests a T4 GPU,
   and restarts the session automatically after installation so the browser
   editor loads without a manual restart.
-- The Colab export prints the scale-bar length and calibration in µm.
+- The Colab export prints the scale-bar length and calibration in µm. The
+  browser prototype's export message does the same.
 - `requirements.txt` now matches the package's dependencies and no longer
   installs the original `segmenteverygrain` package.
 - `environment_macos.yml` now creates a `segmenteveryforam` environment and
@@ -44,6 +47,10 @@ point, see the
 
 - The Colab notebook's browser-editor check no longer shows a traceback with
   current Matplotlib versions.
+- Browser prototype: specimen numbers and scale-bar markers are sized to the
+  image, so they are legible on large microscope images.
+- Browser prototype: empty Depth and Age fields are exported as missing
+  values instead of 0.
 
 ## [0.1.0] - 2026-11-26
 
