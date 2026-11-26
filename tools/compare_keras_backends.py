@@ -68,10 +68,25 @@ def predict_all(output):
     print(json.dumps(timings))
 
 
-def run_backend(backend, output):
+def layer_outputs(output):
+    """Save every layer's output for one image tile with the current backend."""
+    import keras
+    from PIL import Image
+
+    model = keras.saving.load_model(ROOT / MODELS[0], compile=False)
+    probe = keras.Model(model.inputs, [layer.output for layer in model.layers[1:]])
+    image = np.array(Image.open(ROOT / IMAGES[0]).convert("RGB"))
+    tile = image[512:768, 512:768][None].astype("float32") / 255.0
+    results = probe.predict(tile, verbose=0)
+    np.savez_compressed(output, **{f"{i:02d}_{layer.name}": np.asarray(r)
+                                   for i, (layer, r) in enumerate(zip(model.layers[1:], results))})
+    print(json.dumps({"backend": keras.backend.backend()}))
+
+
+def run_backend(backend, output, mode="--predict"):
     env = dict(os.environ, KERAS_BACKEND=backend, TF_CPP_MIN_LOG_LEVEL="2")
     result = subprocess.run(
-        [sys.executable, __file__, "--predict", str(output)],
+        [sys.executable, __file__, mode, str(output)],
         env=env, capture_output=True, text=True,
     )
     if result.returncode != 0:
@@ -85,6 +100,28 @@ def run_backend(backend, output):
 def iou(a, b):
     union = np.logical_or(a, b).sum()
     return 1.0 if union == 0 else np.logical_and(a, b).sum() / union
+
+
+def compare_layers():
+    """Report where the two backends' layer outputs first diverge."""
+    with tempfile.TemporaryDirectory() as temp:
+        outputs = {b: Path(temp) / f"{b}.npz" for b in ("tensorflow", "torch")}
+        for backend, path in outputs.items():
+            run_backend(backend, path, "--layers")
+        a, b = np.load(outputs["tensorflow"]), np.load(outputs["torch"])
+        for key in a.files:
+            diff = np.abs(a[key] - b[key])
+            scale = np.abs(a[key]).max() or 1.0
+            note = ""
+            if diff.max() / scale > 1e-3:
+                # Test for a one-pixel shift between the backends.
+                shifts = {(dy, dx): np.abs(np.roll(b[key], (dy, dx), axis=(1, 2))[:, 1:-1, 1:-1]
+                                           - a[key][:, 1:-1, 1:-1]).max()
+                          for dy in (-1, 0, 1) for dx in (-1, 0, 1)}
+                best = min(shifts, key=shifts.get)
+                note = f"  best shift (dy, dx)={best}: {shifts[best]:.2e}"
+            print(f"{key:28s} shape {str(a[key].shape):20s} max diff {diff.max():.2e} "
+                  f"(relative {diff.max() / scale:.2e}){note}")
 
 
 def main():
@@ -122,5 +159,9 @@ def main():
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--predict":
         predict_all(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--layers":
+        layer_outputs(sys.argv[2])
+    elif sys.argv[1:] == ["layers"]:
+        compare_layers()
     else:
         main()
