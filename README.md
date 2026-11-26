@@ -76,15 +76,6 @@ Foraminifera masks and measurements
   <em>Globigerinoides ruber</em>: original microscope image (left) and SegmentEveryForam segmentation output (right).
 </p>
 
-<p align="center">
-  <img src="docs/source/_static/images/orbulina_original.png" width="48%">
-  <img src="docs/source/_static/images/orbulina_segmented.png" width="48%">
-</p>
-
-<p align="center">
-  <em>Orbulina universa</em>: original microscope image (left) and SegmentEveryForam segmentation output (right).
-</p>
-
 ## Current features
 
 SegmentEveryForam currently provides tools for:
