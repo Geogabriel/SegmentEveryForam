@@ -10,7 +10,7 @@ SegmentEveryForam was created from
 point, see the
 [Segmenteverygrain changelog](https://github.com/zsylvester/segmenteverygrain/blob/main/CHANGELOG.md).
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-11-26
 
 First release of SegmentEveryForam.
 
@@ -59,3 +59,5 @@ First release of SegmentEveryForam.
   notebook. They remain available upstream.
 - The Segmenteverygrain JOSS paper sources (`paper/`) and the workflow that
   built them. The paper is cited in the README and `CITATION.cff`.
+
+[0.1.0]: https://github.com/Geogabriel/SegmentEveryForam/releases/tag/v0.1.0
