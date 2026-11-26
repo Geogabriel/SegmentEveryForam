@@ -130,6 +130,14 @@ jupyter lab
 
 The `environment.yml` file is included when the repository is cloned. It does not need to be downloaded separately.
 
+On an Apple Silicon (M-series) Mac, use `environment_macos.yml` instead. It adds `tensorflow-metal` so TensorFlow can use the Mac's GPU:
+
+```bash
+conda env create -f environment_macos.yml
+```
+
+To install with pip instead of Conda, run `pip install -r requirements.txt` and then `pip install -e .` from the repository root.
+
 After JupyterLab opens, navigate to:
 
 ```text

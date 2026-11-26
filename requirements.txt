@@ -1,20 +1,24 @@
+# Dependencies for installing SegmentEveryForam with pip instead of Conda.
+# The recommended installation uses environment.yml (or environment_macos.yml
+# on Apple Silicon Macs). After installing these, run `pip install -e .`
+# from the repository root to install SegmentEveryForam itself.
 numpy
 matplotlib
-pandas
-jupyterlab
 scipy
+pillow
 scikit-image
 scikit-learn
+pandas
+geopandas
 tqdm
 networkx
 shapely
-pip
-pillow
 rasterio
 opencv-python
 rtree
 tensorflow
+keras
 torch
 torchvision
 sam2
-segmenteverygrain
+jupyterlab

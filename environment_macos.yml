@@ -1,4 +1,10 @@
-name: segmenteverygrain
+# Conda environment for macOS on Apple Silicon (M-series) Macs.
+# tensorflow-metal lets TensorFlow use the Mac's GPU; it supports
+# TensorFlow up to 2.18, hence the version limit below.
+#
+#   conda env create -f environment_macos.yml
+#   conda activate segmenteveryforam
+name: segmenteveryforam
 
 channels:
   - conda-forge
@@ -9,6 +15,7 @@ dependencies:
   - matplotlib
   - pyqt
   - pandas
+  - geopandas
   - jupyterlab
   - scipy
   - scikit-image
@@ -27,4 +34,4 @@ dependencies:
     - torch
     - torchvision
     - sam2
-    - segmenteverygrain
+    - -e .
