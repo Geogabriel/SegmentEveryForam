@@ -1,5 +1,7 @@
 # SegmentEveryForam
 
+[![DOI](https://zenodo.org/badge/github/1343175388.svg)](https://doi.org/10.5281/zenodo.24554300)
+
 <p align="center">
   <img src="docs/source/_static/images/unet-sam-overlay-a.png" alt="U-Net prediction overlay and SAM box prompts on a foraminifera microscope image" width="48%">
   <img src="docs/source/_static/images/unet-sam-overlay-b.png" alt="U-Net prediction overlay and SAM box prompts on a second foraminifera microscope image" width="48%">
@@ -318,7 +320,11 @@ SegmentEveryForam's U-Net and SAM workflow, image-processing utilities and inter
 
 If you use SegmentEveryForam, please cite the software. Citation metadata is in [`CITATION.cff`](CITATION.cff), and GitHub's **Cite this repository** button generates APA and BibTeX from it.
 
-<!-- ZENODO: add the DOI badge and concept DOI here after the first archived release. -->
+The software is archived on Zenodo. This DOI covers all versions and always resolves to the latest one:
+
+Ojo, G. (2026). *SegmentEveryForam* [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.24554300
+
+To cite the exact version you used, use that release's DOI from the Zenodo record. For version 0.1.0, it is https://doi.org/10.5281/zenodo.24554301.
 
 Please also cite the Segmenteverygrain paper, on which SegmentEveryForam builds:
 

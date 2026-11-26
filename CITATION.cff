@@ -18,7 +18,15 @@ authors:
 version: 0.1.0
 date-released: "2026-11-26"
 license: Apache-2.0
+doi: 10.5281/zenodo.24554300
 repository-code: "https://github.com/Geogabriel/SegmentEveryForam"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24554300
+    description: Concept DOI for all versions of SegmentEveryForam
+  - type: doi
+    value: 10.5281/zenodo.24554301
+    description: DOI for version 0.1.0
 keywords:
   - foraminifera
   - micropaleontology
