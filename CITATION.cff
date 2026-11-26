@@ -1,0 +1,59 @@
+cff-version: 1.2.0
+message: >-
+  If you use SegmentEveryForam, please cite this software. Because
+  SegmentEveryForam is derived from Segmenteverygrain, please also cite the
+  Segmenteverygrain paper listed under references.
+title: SegmentEveryForam
+abstract: >-
+  SegmentEveryForam is a Python package for automated segmentation,
+  interactive correction and image-based morphometric analysis of
+  foraminifera. It combines a fine-tuned U-Net with the Segment Anything
+  Model 2.1 and is adapted from Segmenteverygrain.
+type: software
+authors:
+  - given-names: Gabriel
+    family-names: Ojo
+version: 0.1.0
+date-released: "2026-11-25"
+license: Apache-2.0
+repository-code: "https://github.com/Geogabriel/SegmentEveryForam"
+keywords:
+  - foraminifera
+  - micropaleontology
+  - image segmentation
+  - morphometrics
+  - U-Net
+  - Segment Anything Model
+references:
+  - type: article
+    title: "Segmenteverygrain: A Python module for segmentation of grains in images"
+    authors:
+      - given-names: Zoltán
+        family-names: Sylvester
+      - given-names: Daniel F.
+        family-names: Stockli
+      - given-names: Nick
+        family-names: Howes
+      - given-names: Kalinda
+        family-names: Roberts
+      - given-names: Matthew A.
+        family-names: Malkowski
+      - given-names: Zsófia
+        family-names: Poros
+      - given-names: Rowan C.
+        family-names: Martindale
+      - given-names: Wilson
+        family-names: Bai
+    journal: Journal of Open Source Software
+    year: 2025
+    volume: 10
+    issue: 112
+    start: 7953
+    doi: 10.21105/joss.07953
+  - type: software
+    title: Segmenteverygrain
+    authors:
+      - given-names: Zoltán
+        family-names: Sylvester
+    repository-code: "https://github.com/zsylvester/segmenteverygrain"
+    license: Apache-2.0
