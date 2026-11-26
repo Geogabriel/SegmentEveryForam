@@ -174,7 +174,7 @@ Start a fresh Colab notebook and select **Runtime → Change runtime type → T4
 %cd SegmentEveryForam
 ```
 
-Run the launch cell below and open the Gradio link it prints. Sign in as `sef` with the password you enter at launch. The app asks for a password each time you launch it. You can reuse one or choose a new one.
+Run the launch cell below and open the Gradio link it prints in a new browser tab. The copy of the app shown inside the notebook output may not download results. Sign in as `sef` with the password you enter at launch. The app asks for a password each time you launch it. You can reuse one or choose a new one.
 
 ```python
 from getpass import getpass
