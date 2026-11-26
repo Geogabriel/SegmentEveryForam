@@ -60,6 +60,9 @@ point, see the
 - The Segmenteverygrain documentation site sources in `docs/`, the example
   images used only by those pages, and the workflow that built them. The
   README images in `docs/source/_static/images/` are kept.
+- The unused `Heroimage.png` and Segmenteverygrain's georeferencing notebook
+  (`Segment_every_grain_w_georeferencing.ipynb`), which is not used for
+  foraminifera.
 
 ### Fixed
 
