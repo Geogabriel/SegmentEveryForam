@@ -10,6 +10,22 @@ SegmentEveryForam was created from
 point, see the
 [Segmenteverygrain changelog](https://github.com/zsylvester/segmenteverygrain/blob/main/CHANGELOG.md).
 
+## [Unreleased]
+
+### Changed
+
+- `requirements.txt` now matches the package's dependencies and no longer
+  installs the original `segmenteverygrain` package.
+- `environment_macos.yml` now creates a `segmenteveryforam` environment and
+  installs SegmentEveryForam from the repository. The README explains when to
+  use it and how to install with pip.
+
+### Removed
+
+- The Segmenteverygrain documentation site sources in `docs/`, the example
+  images used only by those pages, and the workflow that built them. The
+  README images in `docs/source/_static/images/` are kept.
+
 ## [0.1.0] - 2026-11-26
 
 First release of SegmentEveryForam.
