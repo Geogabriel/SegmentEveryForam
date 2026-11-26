@@ -31,6 +31,9 @@ point, see the
   editor loads without a manual restart.
 - The Colab export prints the scale-bar length and calibration in µm. The
   browser prototype's export message does the same.
+- The browser prototype now uses Gradio 6, the version Colab includes, so
+  installing it in Colab no longer downgrades Gradio or prints dependency
+  errors.
 - `requirements.txt` now matches the package's dependencies and no longer
   installs the original `segmenteverygrain` package.
 - `environment_macos.yml` now creates a `segmenteveryforam` environment and
@@ -49,8 +52,8 @@ point, see the
   current Matplotlib versions.
 - Browser prototype: specimen numbers and scale-bar markers are sized to the
   image, so they are legible on large microscope images.
-- Browser prototype: empty Depth and Age fields are exported as missing
-  values instead of 0.
+- Browser prototype: Depth, Age and the calibration fields start blank
+  instead of showing 0, and blank fields are exported as missing values.
 
 ## [0.1.0] - 2026-11-26
 
