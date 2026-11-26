@@ -206,12 +206,25 @@ Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downl
 
 SegmentEveryForam combines U-Net-based semantic segmentation with SAM 2.1-based instance segmentation.
 
-The repository includes two U-Net checkpoints:
+The repository includes two U-Net checkpoints, produced in two fine-tuning stages. Both predict three classes: background, foraminiferal test interior and external boundary.
 
-- `best_val_loss.keras` is the default workflow checkpoint, selected by validation loss during *Globigerinoides ruber* fine-tuning.
-- `seg_model_foram_v1_30epochs.keras` is the first foraminifera-specific fine-tuned checkpoint.
+| | Stage 1: `seg_model_foram_v1_30epochs.keras` | Stage 2: `best_val_loss.keras` (default) |
+| --- | --- | --- |
+| Starting weights | Segmenteverygrain `seg_model_smooth_labels.keras` | Stage 1 checkpoint |
+| Training data | 51 image–mask pairs from several taxa, including *G. bulloides* and *G. ruber* | 40 *Globigerinoides ruber* image–mask pairs |
+| Split | Random split of 7,140 patches (256 × 256, stride 128) | By original image before patching: 28 train, 6 validation, 6 test |
+| Epochs | 30 | 100; the checkpoint with the lowest validation loss is kept |
+| Notebook | [`Train_foram_unet_v1.ipynb`](notebooks/Train_foram_unet_v1.ipynb) | [`SEF_v2_100epochs.ipynb`](notebooks/SEF_v2_100epochs.ipynb) |
+
+Stage 1 reported a mean IoU of 0.898 and a boundary-class IoU of 0.744 on its held-out patches. Because that split was made at the patch level, the test patches come from the same microscope images as the training patches, so these figures are likely optimistic. Stage 2 splits by image to avoid this.
 
 The inherited examples and general-grain checkpoints are available in the [upstream Segmenteverygrain repository](https://github.com/zsylvester/segmenteverygrain).
+
+### Evaluation
+
+<!-- EVALUATION RESULTS: to be filled from unet_evaluation_results.zip -->
+
+[`Evaluate_saved_UNet_checkpoints.ipynb`](notebooks/Evaluate_saved_UNet_checkpoints.ipynb) compares both checkpoints on the same reference image–mask pairs. It uses 256 × 256 patches with stride 128 and reports the U-Net prediction alone, before SAM.
 
 ### SAM 2.1
 
@@ -323,7 +336,11 @@ See the original Segmenteverygrain repository and publication for complete proje
 
 ## Citation
 
-Because SegmentEveryForam is derived from Segmenteverygrain, users should cite the original Segmenteverygrain publication when using functionality derived from that software:
+If you use SegmentEveryForam, please cite the software. Citation metadata is in [`CITATION.cff`](CITATION.cff), and GitHub's **Cite this repository** button generates APA and BibTeX from it.
+
+<!-- ZENODO: add the DOI badge and concept DOI here after the first archived release. -->
+
+Because SegmentEveryForam is derived from Segmenteverygrain, please also cite the original Segmenteverygrain publication:
 
 Sylvester, Z., Stockli, D. F., Howes, N., Roberts, K., Malkowski, M. A., Poros, Z., Martindale, R. C., & Bai, W. (2025). Segmenteverygrain: A Python module for segmentation of grains in images. *Journal of Open Source Software*, 10(112), 7953. https://doi.org/10.21105/joss.07953
 
@@ -342,12 +359,10 @@ Sylvester, Z., Stockli, D. F., Howes, N., Roberts, K., Malkowski, M. A., Poros, 
 }
 ```
 
-A dedicated citation for SegmentEveryForam will be added if and when the software receives its own archived release or publication.
-
 ## License
 
 SegmentEveryForam is distributed under the Apache License 2.0, consistent with the license of the original Segmenteverygrain project.
 
 The original Segmenteverygrain source code is copyright its respective authors and contributors. Modifications and additions made for SegmentEveryForam retain the applicable Apache 2.0 licensing requirements.
 
-See `LICENSE.txt` for the full license text.
+See [`LICENSE.txt`](LICENSE.txt) for the full license text and [`NOTICE`](NOTICE) for attribution and a summary of changes from Segmenteverygrain.
