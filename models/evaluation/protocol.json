@@ -1,0 +1,15 @@
+{
+  "checkpoint_commit": "1f311172938d2265de0b2d54f05d1244f619057b",
+  "images": [
+    "U1559A_1H_1W_45_47_1_G_ruber_image.jpeg",
+    "U1559A_1H_3W_20_22_1_G_ruber_image.jpeg",
+    "U1559D_1H_4W_40_42_1_G_ruber_image.jpeg"
+  ],
+  "patch_size": 256,
+  "stride": 128,
+  "padding": "VALID",
+  "prediction": "argmax across 3 U-Net classes; no augmentation",
+  "overall": "confusion matrix pooled across evaluation patches",
+  "boundary": "IoU of the boundary class",
+  "scope": "U-Net alone"
+}

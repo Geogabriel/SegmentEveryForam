@@ -22,7 +22,9 @@ First release of SegmentEveryForam.
   ruber* pairs, split by image, lowest validation loss over 100 epochs). The
   training notebooks are in `notebooks/`.
 - `notebooks/Evaluate_saved_UNet_checkpoints.ipynb`, which compares the saved
-  checkpoints on the same reference images.
+  checkpoints on the same reference images, and its results in
+  `models/evaluation/`. On three *G. ruber* reference images, the default
+  checkpoint scores a boundary IoU of 0.804 against 0.794 for v1.
 - Automatic SAM 2.1 box prompts from the U-Net prediction, returning one
   editable polygon per prompt.
 - Foraminifera morphometrics: area, perimeter, major, minor and equivalent

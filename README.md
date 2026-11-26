@@ -222,9 +222,18 @@ The inherited examples and general-grain checkpoints are available in the [upstr
 
 ### Evaluation
 
-<!-- EVALUATION RESULTS: to be filled from unet_evaluation_results.zip -->
+[`Evaluate_saved_UNet_checkpoints.ipynb`](notebooks/Evaluate_saved_UNet_checkpoints.ipynb) compares both checkpoints on the same three *G. ruber* reference image–mask pairs. It scores the U-Net prediction alone, before SAM, on 256 × 256 patches with stride 128, and pools the confusion matrix across all patches. Intersection over union (IoU) is shown per class.
 
-[`Evaluate_saved_UNet_checkpoints.ipynb`](notebooks/Evaluate_saved_UNet_checkpoints.ipynb) compares both checkpoints on the same reference image–mask pairs. It uses 256 × 256 patches with stride 128 and reports the U-Net prediction alone, before SAM.
+| Checkpoint | Mean IoU | Background | Test interior | Boundary | Pixel accuracy |
+| --- | --- | --- | --- | --- | --- |
+| Stage 1 (`seg_model_foram_v1_30epochs.keras`) | 0.921 | 0.996 | 0.973 | 0.794 | 0.994 |
+| Stage 2 (`best_val_loss.keras`) | **0.925** | **0.997** | **0.975** | **0.804** | 0.994 |
+
+Stage 2 scores higher on every class, and its boundary IoU is higher on each of the three images (0.806 vs 0.793, 0.795 vs 0.786 and 0.810 vs 0.804). The gains are small, and three images are too few to treat them as a firm ranking. Boundary IoU is the most informative column, because the outline is what determines the SAM prompts and the morphometric measurements.
+
+<!-- TODO before merge: confirm whether the three reference images were excluded from both training runs, and say so here. -->
+
+Per-image results and the evaluation protocol are in [`models/evaluation/`](models/evaluation/).
 
 ### SAM 2.1
 
