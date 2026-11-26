@@ -142,3 +142,4 @@ dmypy.json
 notebooks/foram_morphometrics_outputs/
 notebooks/foram_average_measurement_outputs/
 notebooks/foram_figure_outputs/
+notebooks/foram_specimen_outputs/
