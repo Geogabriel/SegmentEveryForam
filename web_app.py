@@ -260,6 +260,10 @@ def build_app():
         run.click(segment, [upload, session], [session, preview, sample, scale, known, download, status], concurrency_id="workflow")
         preview.select(edit, [session, mode], [session, preview, download, status], concurrency_id="workflow")
         save.click(export, [session, sample, species, depth, age, scale, known, crops], [session, download, status], concurrency_id="workflow")
+        # Gradio's number boxes show an empty initial value as 0, which users
+        # could export as a real depth or age. Clearing them on load shows
+        # them as blank.
+        app.load(lambda: (None, None, None, None), outputs=[scale, known, depth, age])
     return app.queue()
 
 
