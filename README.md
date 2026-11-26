@@ -234,7 +234,7 @@ Per-image results and the evaluation protocol are in [`models/evaluation/`](mode
 
 Load the checkpoints with `sef.load_unet(path)` rather than `keras.saving.load_model`. The checkpoints were trained with TensorFlow, and on Keras's PyTorch backend `load_model` shifts the upsampling layers by one pixel. `load_unet` corrects this, so predictions match TensorFlow on either backend; [`tools/compare_keras_backends.py`](tools/compare_keras_backends.py) checks this.
 
-The Colab notebook and the browser prototype run Keras on PyTorch. On a Colab T4 GPU, the full segmentation step (U-Net and SAM 2.1) produced the same specimen outlines as TensorFlow in about 12 s per image instead of 22 s, and used about 1.2 GB less GPU memory; [`tools/compare_workflow_backends.py`](tools/compare_workflow_backends.py) reproduces this comparison. To use TensorFlow instead, set the environment variable `KERAS_BACKEND=tensorflow` before starting Python.
+The notebooks and the browser prototype run Keras on PyTorch. On a Colab T4 GPU, the full segmentation step (U-Net and SAM 2.1) produced the same specimen outlines as TensorFlow in about 12 s per image instead of 22 s, and used about 1.2 GB less GPU memory; [`tools/compare_workflow_backends.py`](tools/compare_workflow_backends.py) reproduces this comparison. On a CPU the two backends take about the same time and give the same results. On a Mac with Apple silicon, PyTorch runs the U-Net on the Mac's GPU; this has not been tested yet, so compare a few results with TensorFlow before relying on it. To use TensorFlow instead, set the environment variable `KERAS_BACKEND=tensorflow` before starting Python, or change `"torch"` to `"tensorflow"` in the first cell of the local workflow notebook and restart the kernel.
 
 ### SAM 2.1
 

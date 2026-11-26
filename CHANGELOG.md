@@ -43,6 +43,9 @@ point, see the
   gives the same specimen outlines as TensorFlow in about 12 s per image
   instead of 22 s on a Colab T4 GPU, and uses about 1.2 GB less GPU memory.
   The browser prototype keeps any `KERAS_BACKEND` already set.
+- The local workflow notebook also runs Keras on PyTorch and loads the U-Net
+  with `load_unet()`. On a CPU this gives the same results in about the same
+  time as TensorFlow.
 - The browser prototype now uses Gradio 6, the version Colab includes, so
   installing it in Colab no longer downgrades Gradio or prints dependency
   errors.
