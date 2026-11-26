@@ -197,7 +197,7 @@ python -m pip install 'gradio>=6,<7'
 python web_app.py
 ```
 
-Open the local URL printed in the terminal. This launch listens on localhost.
+Open the local URL printed in the terminal. This launch listens on localhost. The app runs Keras on PyTorch unless `KERAS_BACKEND` is already set.
 
 Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downloads both model checkpoints. To edit the numbered overlay, select a review tool, then click a mask to remove it or click a missed specimen to add it. For calibration, select **Mark scale-bar endpoints**, click both ends of the scale bar, and enter its printed length in micrometers, or enter a known calibration in pixels per meter. Select **Export** and download the results: a ZIP with the measurements, specimen crops and masks, or, with **Include specimen crops and masks** unticked, only the measurements CSV.
 
@@ -233,6 +233,8 @@ None of the three reference images was used to train, validate or test either ch
 Per-image results and the evaluation protocol are in [`models/evaluation/`](models/evaluation/).
 
 Load the checkpoints with `sef.load_unet(path)` rather than `keras.saving.load_model`. The checkpoints were trained with TensorFlow, and on Keras's PyTorch backend `load_model` shifts the upsampling layers by one pixel. `load_unet` corrects this, so predictions match TensorFlow on either backend; [`tools/compare_keras_backends.py`](tools/compare_keras_backends.py) checks this.
+
+The Colab notebook and the browser prototype run Keras on PyTorch. On a Colab T4 GPU, the full segmentation step (U-Net and SAM 2.1) produced the same specimen outlines as TensorFlow in about 12 s per image instead of 22 s, and used about 1.2 GB less GPU memory; [`tools/compare_workflow_backends.py`](tools/compare_workflow_backends.py) reproduces this comparison. To use TensorFlow instead, set the environment variable `KERAS_BACKEND=tensorflow` before starting Python.
 
 ### SAM 2.1
 

@@ -11,8 +11,13 @@ from urllib.request import urlretrieve
 from uuid import uuid4
 from zipfile import is_zipfile
 
-import gradio as gr
-from PIL import Image, ImageDraw, ImageFont
+# Run Keras on PyTorch unless KERAS_BACKEND is already set. PyTorch gives the
+# same results as TensorFlow with load_unet and is about twice as fast. This
+# must happen before Keras is first imported.
+os.environ.setdefault("KERAS_BACKEND", "torch")
+
+import gradio as gr  # noqa: E402
+from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 
 
 UNET_URL = (
