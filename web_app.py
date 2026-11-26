@@ -49,15 +49,16 @@ def models():
     if not torch.cuda.is_available():
         raise gr.Error("Run the app in an environment where PyTorch can access a CUDA GPU.")
 
-    import keras
     from sam2.build_sam import build_sam2
+
+    import segmenteveryforam as sef
 
     directory = Path(os.environ.get("SEF_MODEL_DIR", Path.home() / ".cache" / "segmenteveryforam"))
     directory.mkdir(parents=True, exist_ok=True)
     unet_path = checkpoint(directory, "best_val_loss.keras", UNET_URL, is_zipfile)
     sam_path = checkpoint(directory, "sam2.1_hiera_large.pt", SAM_URL, is_zipfile)
     return (
-        keras.saving.load_model(unet_path, compile=False),
+        sef.load_unet(unet_path),
         build_sam2("configs/sam2.1/sam2.1_hiera_l.yaml", str(sam_path), device="cuda"),
     )
 

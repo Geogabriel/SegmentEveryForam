@@ -26,6 +26,13 @@ from .interactions import (
     get_summary,
 )
 
+# U-Net loading that gives the same results on every Keras backend
+from .keras_compat import (
+    load_unet,
+    make_backend_consistent,
+    SamePaddingConv2DTranspose,
+)
+
 # Foraminifera extraction utilities
 from .grain_utils import (
     extract_grain_image,
