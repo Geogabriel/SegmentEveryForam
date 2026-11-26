@@ -29,7 +29,8 @@ point, see the
   pixels and most of the boundary class. The Colab notebook and the browser
   prototype now use `load_unet()`.
 - `tools/compare_keras_backends.py` compares U-Net predictions between the
-  TensorFlow and PyTorch backends.
+  TensorFlow and PyTorch backends, and `tools/compare_workflow_backends.py`
+  compares the full U-Net and SAM 2.1 segmentation step.
 
 ### Changed
 
@@ -38,6 +39,10 @@ point, see the
   editor loads without a manual restart.
 - The Colab export prints the scale-bar length and calibration in µm. The
   browser prototype's export message does the same.
+- The Colab notebook and the browser prototype run Keras on PyTorch, which
+  gives the same specimen outlines as TensorFlow in about 12 s per image
+  instead of 22 s on a Colab T4 GPU, and uses about 1.2 GB less GPU memory.
+  The browser prototype keeps any `KERAS_BACKEND` already set.
 - The browser prototype now uses Gradio 6, the version Colab includes, so
   installing it in Colab no longer downgrades Gradio or prints dependency
   errors.
