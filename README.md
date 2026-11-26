@@ -1,6 +1,6 @@
 # SegmentEveryForam
 
-[![DOI](https://zenodo.org/badge/github/1343175388.svg)](https://doi.org/10.5281/zenodo.24554300)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24554300.svg)](https://doi.org/10.5281/zenodo.24554300)
 
 <p align="center">
   <img src="docs/source/_static/images/unet-sam-overlay-a.png" alt="U-Net prediction overlay and SAM box prompts on a foraminifera microscope image" width="48%">
