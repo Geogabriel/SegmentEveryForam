@@ -15,7 +15,6 @@ dependencies:
   - matplotlib
   - pyqt
   - pandas
-  - geopandas
   - jupyterlab
   - scipy
   - scikit-image
