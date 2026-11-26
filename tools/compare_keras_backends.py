@@ -46,6 +46,27 @@ def load_predict_image():
     return namespace["predict_image"]
 
 
+def load_keras_compat():
+    """Load segmenteveryforam/keras_compat.py without importing the package."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "keras_compat", ROOT / "segmenteveryforam" / "keras_compat.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_model(path):
+    """Load a checkpoint as selected by SEF_LOADER: plain, compat or forced."""
+    import keras
+
+    loader = os.environ.get("SEF_LOADER", "plain")
+    if loader == "plain":
+        return keras.saving.load_model(path, compile=False)
+    return load_keras_compat().load_unet(path, force=loader == "forced")
+
+
 def predict_all(output):
     """Run every model on every image with the current backend."""
     import keras
@@ -55,7 +76,7 @@ def predict_all(output):
     timings = {"backend": keras.backend.backend()}
     arrays = {}
     for model_path in MODELS:
-        model = keras.saving.load_model(ROOT / model_path, compile=False)
+        model = load_model(ROOT / model_path)
         for image_path in IMAGES:
             image = np.array(Image.open(ROOT / image_path).convert("RGB"))
             predict_image(image[:512, :512], model, I=256)  # warm-up
@@ -83,8 +104,8 @@ def layer_outputs(output):
     print(json.dumps({"backend": keras.backend.backend()}))
 
 
-def run_backend(backend, output, mode="--predict"):
-    env = dict(os.environ, KERAS_BACKEND=backend, TF_CPP_MIN_LOG_LEVEL="2")
+def run_backend(backend, output, mode="--predict", loader="plain"):
+    env = dict(os.environ, KERAS_BACKEND=backend, TF_CPP_MIN_LOG_LEVEL="2", SEF_LOADER=loader)
     result = subprocess.run(
         [sys.executable, __file__, mode, str(output)],
         env=env, capture_output=True, text=True,
@@ -124,36 +145,53 @@ def compare_layers():
                   f"(relative {diff.max() / scale:.2e}){note}")
 
 
+def compare(reference, candidate, timings, labels):
+    """Print agreement between two sets of predictions; return True if they agree."""
+    all_agree = True
+    for key in reference.files:
+        a, b = reference[key], candidate[key]
+        diff = np.abs(a - b)
+        a_map, b_map = a.argmax(-1), b.argmax(-1)
+        agreement = (a_map == b_map).mean()
+        # The specimen detector thresholds the interior probability at 0.5.
+        interior_iou = iou(a[..., 1] >= 0.5, b[..., 1] >= 0.5)
+        class_iou = ", ".join(f"{name} {iou(a_map == k, b_map == k):.6f}"
+                              for k, name in enumerate(CLASSES))
+        print(f"\n{key}")
+        print(f"  max |prob difference|:  {diff.max():.2e}  (mean {diff.mean():.2e})")
+        print(f"  class map agreement:    {agreement:.6%}")
+        print(f"  class IoU between runs: {class_iou}")
+        print(f"  interior >= 0.5 IoU:    {interior_iou:.6f}")
+        print(f"  seconds: {labels[0]} {timings[0][key]:.1f}, {labels[1]} {timings[1][key]:.1f}")
+        all_agree &= bool(agreement > 0.9999 and interior_iou > 0.9999)
+
+    return all_agree
+
+
 def main():
     import torch
 
     print(f"PyTorch CUDA available: {torch.cuda.is_available()}")
+    runs = {
+        "TensorFlow": ("tensorflow", "plain"),
+        "PyTorch + load_unet": ("torch", "compat"),
+        "TensorFlow + forced load_unet": ("tensorflow", "forced"),
+    }
     with tempfile.TemporaryDirectory() as temp:
-        outputs = {b: Path(temp) / f"{b}.npz" for b in ("tensorflow", "torch")}
-        timings = {b: run_backend(b, path) for b, path in outputs.items()}
-        tf_pred = np.load(outputs["tensorflow"])
-        torch_pred = np.load(outputs["torch"])
-
-        all_agree = True
-        for key in tf_pred.files:
-            a, b = tf_pred[key], torch_pred[key]
-            diff = np.abs(a - b)
-            a_map, b_map = a.argmax(-1), b.argmax(-1)
-            agreement = (a_map == b_map).mean()
-            # The specimen detector thresholds the interior probability at 0.5.
-            interior_iou = iou(a[..., 1] >= 0.5, b[..., 1] >= 0.5)
-            class_iou = ", ".join(f"{name} {iou(a_map == k, b_map == k):.6f}"
-                                  for k, name in enumerate(CLASSES))
-            print(f"\n{key}")
-            print(f"  max |prob difference|:  {diff.max():.2e}  (mean {diff.mean():.2e})")
-            print(f"  class map agreement:    {agreement:.6%}")
-            print(f"  class IoU between runs: {class_iou}")
-            print(f"  interior >= 0.5 IoU:    {interior_iou:.6f}")
-            print(f"  seconds: TensorFlow {timings['tensorflow'][key]:.1f}, "
-                  f"PyTorch {timings['torch'][key]:.1f}")
-            all_agree &= bool(agreement > 0.9999 and interior_iou > 0.9999)
-
-    print("\nResult:", "the backends agree." if all_agree else "the backends DIFFER; see above.")
+        results = {}
+        for label, (backend, loader) in runs.items():
+            path = Path(temp) / f"{backend}-{loader}.npz"
+            timings = run_backend(backend, path, loader=loader)
+            results[label] = (np.load(path), timings)
+        reference, ref_timings = results["TensorFlow"]
+        verdicts = {}
+        for label in list(runs)[1:]:
+            print(f"\n=== TensorFlow vs {label} ===")
+            verdicts[label] = compare(reference, results[label][0],
+                                      (ref_timings, results[label][1]), ("TensorFlow", label))
+    print()
+    for label, agree in verdicts.items():
+        print(f"Result, {label}:", "agrees with TensorFlow." if agree else "DIFFERS from TensorFlow; see above.")
 
 
 if __name__ == "__main__":
