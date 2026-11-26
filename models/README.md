@@ -26,7 +26,18 @@ This model was trained using multiple foraminiferal images and serves as the fir
 
 ### `best_val_loss.keras`
 
-Default workflow checkpoint. Fine-tuned from the v1 model on *Globigerinoides ruber* images and selected by lowest validation loss during the 100-epoch run. The dataset was split by original microscope image before patch extraction. See the [Colab training notebook](../notebooks/SEF_v2_100epochs.ipynb) for the training code and input layout.
+Default workflow checkpoint. Fine-tuned from the v1 model on 40 *Globigerinoides ruber* image–mask pairs and selected by lowest validation loss during the 100-epoch run. The dataset was split by original microscope image before patch extraction: 28 training images (3,920 patches), 6 validation (840) and 6 test (840). The [Colab training notebook](../notebooks/SEF_v2_100epochs.ipynb) contains the training code, the full training log and the loss curve.
+
+## Evaluation
+
+Both checkpoints were scored on the same three *G. ruber* reference images, none of which was used in either training run, with [`Evaluate_saved_UNet_checkpoints.ipynb`](../notebooks/Evaluate_saved_UNet_checkpoints.ipynb). The scores cover the U-Net alone, pooled over all patches:
+
+| Checkpoint | Mean IoU | Boundary IoU |
+| --- | --- | --- |
+| `seg_model_foram_v1_30epochs.keras` | 0.921 | 0.794 |
+| `best_val_loss.keras` | 0.925 | 0.804 |
+
+The per-image results (`unet_iou_comparison.csv`), full metrics (`metrics.json`) and evaluation settings (`protocol.json`) are in [`evaluation/`](evaluation/).
 
 ## SAM 2.1
 

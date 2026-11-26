@@ -9,11 +9,9 @@
   <em>Automated segmentation, interactive correction, and morphometric analysis of foraminifera from microscope images.</em>
 </p>
 
-**SegmentEveryForam** is a Python package for automated segmentation, interactive correction, and image-based morphometric analysis of foraminifera.
+**SegmentEveryForam** is a Python package for automated segmentation, interactive correction, and image-based morphometric analysis of foraminifera. It finds every test in a microscope image with a U-Net fine-tuned on foraminifera, refines each outline with SAM 2.1, and measures size and shape for every specimen, producing per-sample and per-species summaries.
 
-The package is adapted from [Segmenteverygrain](https://github.com/zsylvester/segmenteverygrain), developed by Zoltán Sylvester and collaborators. Segmenteverygrain combines a U-Net-style convolutional neural network with the Segment Anything Model (SAM) to identify and segment individual objects in images.
-
-SegmentEveryForam extends this framework toward foraminiferal image analysis while retaining the core segmentation architecture of Segmenteverygrain.
+It is built on [Segmenteverygrain](https://github.com/zsylvester/segmenteverygrain) (Sylvester et al., 2025).
 
 > **Development status:** SegmentEveryForam is currently under active development.
 
@@ -74,15 +72,6 @@ Foraminifera masks and measurements
 
 <p align="center">
   <em>Globigerinoides ruber</em>: original microscope image (left) and SegmentEveryForam segmentation output (right).
-</p>
-
-<p align="center">
-  <img src="docs/source/_static/images/orbulina_original.png" width="48%">
-  <img src="docs/source/_static/images/orbulina_segmented.png" width="48%">
-</p>
-
-<p align="center">
-  <em>Orbulina universa</em>: original microscope image (left) and SegmentEveryForam segmentation output (right).
 </p>
 
 ## Current features
@@ -206,12 +195,32 @@ Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downl
 
 SegmentEveryForam combines U-Net-based semantic segmentation with SAM 2.1-based instance segmentation.
 
-The repository includes two U-Net checkpoints:
+The repository includes two U-Net checkpoints, produced in two fine-tuning stages. Both predict three classes: background, foraminiferal test interior and external boundary.
 
-- `best_val_loss.keras` is the default workflow checkpoint, selected by validation loss during *Globigerinoides ruber* fine-tuning.
-- `seg_model_foram_v1_30epochs.keras` is the first foraminifera-specific fine-tuned checkpoint.
+| | Stage 1: `seg_model_foram_v1_30epochs.keras` | Stage 2: `best_val_loss.keras` (default) |
+| --- | --- | --- |
+| Starting weights | Segmenteverygrain `seg_model_smooth_labels.keras` | Stage 1 checkpoint |
+| Training data | 51 image–mask pairs from several taxa, including *G. bulloides* and *G. ruber* | 40 *Globigerinoides ruber* image–mask pairs |
+| Split | Random split of 7,140 patches (256 × 256, stride 128) | By original image before patching: 28 train, 6 validation, 6 test |
+| Epochs | 30 | 100; the checkpoint with the lowest validation loss is kept |
+| Notebook | [`Train_foram_unet_v1.ipynb`](notebooks/Train_foram_unet_v1.ipynb) | [`SEF_v2_100epochs.ipynb`](notebooks/SEF_v2_100epochs.ipynb) |
 
-The inherited examples and general-grain checkpoints are available in the [upstream Segmenteverygrain repository](https://github.com/zsylvester/segmenteverygrain).
+Stage 1 reported a mean IoU of 0.898 and a boundary-class IoU of 0.744 on its held-out patches. Because that split was made at the patch level, the test patches come from the same microscope images as the training patches, so these figures are likely optimistic. Stage 2 splits by image to avoid this.
+
+### Evaluation
+
+[`Evaluate_saved_UNet_checkpoints.ipynb`](notebooks/Evaluate_saved_UNet_checkpoints.ipynb) compares both checkpoints on the same three held-out *G. ruber* reference image–mask pairs. It scores the U-Net prediction alone, before SAM, on 256 × 256 patches with stride 128, and pools the confusion matrix across all patches. Intersection over union (IoU) is shown per class.
+
+| Checkpoint | Mean IoU | Background | Test interior | Boundary | Pixel accuracy |
+| --- | --- | --- | --- | --- | --- |
+| Stage 1 (`seg_model_foram_v1_30epochs.keras`) | 0.921 | 0.996 | 0.973 | 0.794 | 0.994 |
+| Stage 2 (`best_val_loss.keras`) | **0.925** | **0.997** | **0.975** | **0.804** | 0.994 |
+
+Stage 2 scores higher on every class, and its boundary IoU is higher on each of the three images (0.806 vs 0.793, 0.795 vs 0.786 and 0.810 vs 0.804). The gains are small, and three images are too few to treat them as a firm ranking. Boundary IoU is the most informative column, because the outline is what determines the SAM prompts and the morphometric measurements.
+
+None of the three reference images was used to train, validate or test either checkpoint. They were kept in a separate folder throughout.
+
+Per-image results and the evaluation protocol are in [`models/evaluation/`](models/evaluation/).
 
 ### SAM 2.1
 
@@ -301,29 +310,17 @@ SegmentEveryForam can save specimen-level morphometric data for individual sampl
 
 When multiple samples of the same species have been processed, specimen-level data can also be combined across samples for subsequent visualization and analysis.
 
-## Relationship to Segmenteverygrain
-
-SegmentEveryForam is a derivative of the open-source Segmenteverygrain project.
-
-The original Segmenteverygrain software provides the foundation for much of the segmentation workflow, including U-Net-based segmentation, SAM integration, image-processing utilities, and interactive segmentation functionality.
-
-SegmentEveryForam is intended to extend this framework for applications involving foraminifera, including microscopy-based segmentation and morphometric analysis.
-
-The original Segmenteverygrain project is available at:
-
-https://github.com/zsylvester/segmenteverygrain
-
 ## Acknowledgements
 
-SegmentEveryForam builds upon work by the developers and contributors of Segmenteverygrain.
-
-The original `interactions` module was developed by Dave Matthews for Segmenteverygrain. The Segmenteverygrain project was developed by Zoltán Sylvester and collaborators and benefited from contributions and discussions involving Danny Stockli, Nick Howes, Kalinda Roberts, Jake Covault, Matt Malkowski, Raymond Luong, Wilson Bai, Rowan Martindale, Sergey Fomel, and others.
-
-See the original Segmenteverygrain repository and publication for complete project acknowledgements.
+SegmentEveryForam's U-Net and SAM workflow, image-processing utilities and interactive editor build on [Segmenteverygrain](https://github.com/zsylvester/segmenteverygrain) by Zoltán Sylvester and collaborators. The original `interactions` module was written by Dave Matthews. See the Segmenteverygrain repository for its full acknowledgements.
 
 ## Citation
 
-Because SegmentEveryForam is derived from Segmenteverygrain, users should cite the original Segmenteverygrain publication when using functionality derived from that software:
+If you use SegmentEveryForam, please cite the software. Citation metadata is in [`CITATION.cff`](CITATION.cff), and GitHub's **Cite this repository** button generates APA and BibTeX from it.
+
+<!-- ZENODO: add the DOI badge and concept DOI here after the first archived release. -->
+
+Please also cite the Segmenteverygrain paper, on which SegmentEveryForam builds:
 
 Sylvester, Z., Stockli, D. F., Howes, N., Roberts, K., Malkowski, M. A., Poros, Z., Martindale, R. C., & Bai, W. (2025). Segmenteverygrain: A Python module for segmentation of grains in images. *Journal of Open Source Software*, 10(112), 7953. https://doi.org/10.21105/joss.07953
 
@@ -342,12 +339,6 @@ Sylvester, Z., Stockli, D. F., Howes, N., Roberts, K., Malkowski, M. A., Poros, 
 }
 ```
 
-A dedicated citation for SegmentEveryForam will be added if and when the software receives its own archived release or publication.
-
 ## License
 
-SegmentEveryForam is distributed under the Apache License 2.0, consistent with the license of the original Segmenteverygrain project.
-
-The original Segmenteverygrain source code is copyright its respective authors and contributors. Modifications and additions made for SegmentEveryForam retain the applicable Apache 2.0 licensing requirements.
-
-See `LICENSE.txt` for the full license text.
+SegmentEveryForam is distributed under the Apache License 2.0. See [`LICENSE.txt`](LICENSE.txt) for the full license text and [`NOTICE`](NOTICE) for attribution and a summary of changes from Segmenteverygrain.

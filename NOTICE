@@ -1,0 +1,31 @@
+SegmentEveryForam
+Copyright 2026 Gabriel Ojo
+
+This product is a derivative work of Segmenteverygrain
+(https://github.com/zsylvester/segmenteverygrain),
+Copyright 2023 Zoltan Sylvester and contributors,
+licensed under the Apache License, Version 2.0.
+
+SegmentEveryForam was created from Segmenteverygrain commit
+1ab65ccdfa3fcd4ab567a3528c2a2b06758c8653 (2026-08-14). Files carried over
+from Segmenteverygrain have since been modified; the main changes are:
+
+  - the Python package was renamed from `segmenteverygrain` to
+    `segmenteveryforam`, and the interactive `GrainPlot` interface was renamed
+    `ForamPlot` (with `GrainPlot` kept as an alias);
+  - U-Net checkpoints were fine-tuned for foraminifera, replacing the
+    general-grain checkpoints;
+  - foraminifera morphometrics, specimen export, SAM 2.1 box prompting, a
+    Google Colab workflow and a Gradio browser prototype were added;
+  - upstream example datasets, the general-grain checkpoints and the
+    Segmenteverygrain JOSS paper sources were removed.
+
+The full modification history is available in the Git history of
+https://github.com/Geogabriel/SegmentEveryForam.
+
+The original `interactions` module was written by Dave Matthews for
+Segmenteverygrain.
+
+SegmentEveryForam uses SAM 2.1 (https://github.com/facebookresearch/sam2),
+developed by Meta. SAM 2.1 model checkpoints are not included in or
+redistributed by this repository and are subject to their own license terms.
