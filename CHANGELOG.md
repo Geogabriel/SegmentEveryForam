@@ -16,6 +16,11 @@ point, see the
 
 - The browser prototype has an **Undo last edit** button that reverses
   added or removed masks and scale-bar clicks, up to 50 steps back.
+- The browser prototype shows a measurement table under the image with
+  each specimen's area, perimeter, axes, equivalent diameter, aspect ratio,
+  circularity and roundness. It is in pixels until the scale is set and in
+  millimetres afterwards, and it updates after every edit. Clicking a mask
+  or a table row highlights that specimen in both.
 
 ### Changed
 

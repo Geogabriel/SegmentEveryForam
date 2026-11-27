@@ -199,7 +199,7 @@ python web_app.py
 
 Open the local URL printed in the terminal. This launch listens on localhost. The app runs Keras on PyTorch unless `KERAS_BACKEND` is already set.
 
-Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downloads both model checkpoints. To edit the numbered overlay, select a review tool, then click a mask to remove it or click a missed specimen to add it. **Undo last edit** reverses the most recent edit, including scale-bar clicks. For calibration, select **Mark scale-bar endpoints**, click both ends of the scale bar, and enter its printed length in micrometers, or enter a known calibration in pixels per meter. Select **Export** and download the results: a ZIP with the measurements, specimen crops and masks, or, with **Include specimen crops and masks** unticked, only the measurements CSV.
+Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downloads both model checkpoints. To edit the numbered overlay, select a review tool, then click a mask to remove it or click a missed specimen to add it. **Undo last edit** reverses the most recent edit, including scale-bar clicks. The **Measurements** table under the image lists each numbered specimen, in pixels until the scale is set and in millimetres after; click a mask or a table row to highlight that specimen in both. For calibration, select **Mark scale-bar endpoints**, click both ends of the scale bar, and enter its printed length in micrometers, or enter a known calibration in pixels per meter. Select **Export** and download the results: a ZIP with the measurements, specimen crops and masks, or, with **Include specimen crops and masks** unticked, only the measurements CSV.
 
 ## Models
 

@@ -33,6 +33,19 @@ REVIEW = "Inspect masks"
 ADD = "Add a missed specimen"
 REMOVE = "Remove a mask"
 CALIBRATE = "Mark scale-bar endpoints"
+HIGHLIGHT = (255, 214, 0)
+# Columns shown in the measurement table: get_foram_morphometrics column,
+# heading, and whether the value is an area, a length or a ratio.
+TABLE_COLUMNS = [
+    ("area_mm2", "Area", "area"),
+    ("perimeter_mm", "Perimeter", "length"),
+    ("major_diameter_mm", "Major axis", "length"),
+    ("minor_diameter_mm", "Minor axis", "length"),
+    ("equivalent_diameter_mm", "Eq. diameter", "length"),
+    ("aspect_ratio", "Aspect ratio", "ratio"),
+    ("circularity", "Circularity", "ratio"),
+    ("roundness", "Roundness", "ratio"),
+]
 
 
 def checkpoint(directory, name, url, valid):
@@ -82,11 +95,16 @@ def review_image(session):
     unit = max(1, round(max(canvas.size) / 1000))
     overlay = Image.new("RGBA", canvas.size)
     draw = ImageDraw.Draw(overlay)
+    selected = session.get("selected")
     for index, polygon in enumerate(session["polygons"]):
         color = COLORS[index % len(COLORS)]
-        draw.polygon(list(polygon.exterior.coords), fill=(*color, 65), outline=(*color, 255), width=2 * unit)
+        if index == selected:
+            outline, fill, width = (*HIGHLIGHT, 255), (*HIGHLIGHT, 90), 5 * unit
+        else:
+            outline, fill, width = (*color, 255), (*color, 65), 2 * unit
+        draw.polygon(list(polygon.exterior.coords), fill=fill, outline=outline, width=width)
         for ring in polygon.interiors:
-            draw.polygon(list(ring.coords), fill=(0, 0, 0, 0), outline=(*color, 255), width=2 * unit)
+            draw.polygon(list(ring.coords), fill=(0, 0, 0, 0), outline=outline, width=width)
     canvas = Image.alpha_composite(canvas, overlay).convert("RGB")
     draw = ImageDraw.Draw(canvas)
     font = label_font(16 * unit)
@@ -101,6 +119,81 @@ def review_image(session):
     for x, y in points:
         draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill="yellow", outline="black", width=unit)
     return canvas
+
+
+def valid_number(value):
+    return value is not None and math.isfinite(value) and value > 0
+
+
+def current_calibration(session, scale_um, pixels_per_meter):
+    """Return pixels per meter from the known value or the scale bar, or None."""
+    if valid_number(pixels_per_meter):
+        return pixels_per_meter
+    points = session["points"] if session else []
+    if len(points) == 2 and valid_number(scale_um):
+        return math.dist(*points) / (scale_um * 1e-6)
+    return None
+
+
+def pixel_measurements(session):
+    """Measure each mask in pixels, reusing results for masks measured before."""
+    import segmenteveryforam as sef
+
+    cache = session.setdefault("measured", {})
+    rows = []
+    for polygon in session["polygons"]:
+        key = polygon.wkb
+        if key not in cache:
+            grains = sef.polygons_to_grains([polygon], image=session["image"])
+            cache[key] = grains[0].measure().to_dict() if grains else {}
+        rows.append(cache[key])
+    return rows
+
+
+def measurement_table(session, scale_um=None, pixels_per_meter=None):
+    """Build the measurement table, in millimetres once the scale is known."""
+    import pandas as pd
+
+    ppm = current_calibration(session, scale_um, pixels_per_meter)
+    length, area = ("mm", "mm²") if ppm else ("px", "px²")
+    units = {"area": f" ({area})", "length": f" ({length})", "ratio": ""}
+    headings = ["#"] + [name + units[kind] for _, name, kind in TABLE_COLUMNS]
+    if not session or not session["polygons"]:
+        return gr.Dataframe(value=pd.DataFrame(columns=headings), label="Measurements")
+
+    import segmenteveryforam as sef
+
+    summary = pd.DataFrame(pixel_measurements(session)).reindex(
+        columns=["area", "perimeter", "major_axis_length", "minor_axis_length",
+                 "orientation", "centroid-0", "centroid-1"])
+    # get_foram_morphometrics expects meters and reports millimetres. Without a
+    # calibration, 1000 px per meter makes its millimetre columns pixels.
+    meters_per_px = 1 / (ppm or 1000)
+    summary["area"] *= meters_per_px ** 2
+    for column in ["perimeter", "major_axis_length", "minor_axis_length"]:
+        summary[column] *= meters_per_px
+    data = sef.get_foram_morphometrics(summary)
+    table = pd.DataFrame({"#": range(1, len(data) + 1)})
+    formats = {}
+    for (column, _, kind), heading in zip(TABLE_COLUMNS, headings[1:]):
+        if kind == "ratio":
+            decimals = 3
+        elif ppm:
+            decimals = 5 if kind == "area" else 4
+        else:
+            decimals = 1
+        table[heading] = data[column].to_numpy(dtype=float).round(decimals)
+        formats[heading] = f"{{:.{decimals}f}}"
+    selected = session.get("selected")
+    styled = table.style.format(formats, na_rep="–").apply(
+        lambda row: [f"background-color: rgba{(*HIGHLIGHT, 0.35)}" if row.name == selected else ""] * len(row),
+        axis=1)
+    if ppm:
+        label = f"Measurements ({ppm * 1e-6:.4g} px per µm)"
+    else:
+        label = ("Measurements in pixels. Set the scale bar length or a known calibration "
+                 "to see millimetres.")
+    return gr.Dataframe(value=styled, label=label)
 
 
 def clear_session(session):
@@ -120,12 +213,13 @@ def segment(path, previous):
     unet, sam = models()
     polygons, _, _ = sef.predict_with_box_prompts(image, unet, sam)
     session = {"image": image, "name": path.name, "polygons": polygons, "points": [], "history": [],
-               "directory": None}
+               "selected": None, "directory": None}
     preview = review_image(session)
     clear_session(previous)
     return session, preview, path.stem, None, None, None, (
-        f"Detected {len(polygons)} specimens. Choose a review tool to edit masks or mark the scale bar."
-    )
+        f"Detected {len(polygons)} specimens. Click a mask to find it in the table, "
+        "or choose a review tool to edit masks or mark the scale bar."
+    ), measurement_table(session)
 
 
 UNDO_LIMIT = 50
@@ -136,27 +230,61 @@ def remember(session):
     history = session.setdefault("history", [])
     history.append((list(session["polygons"]), list(session["points"])))
     del history[:-UNDO_LIMIT]
+    # Mask numbers can change, so drop the highlight.
+    session["selected"] = None
 
 
-def undo(session):
+def undo(session, scale_um=None, pixels_per_meter=None):
     if not session or not session.get("history"):
         raise gr.Error("There is nothing to undo.")
     session["polygons"], session["points"] = session["history"].pop()
+    session["selected"] = None
     remaining = len(session["history"])
     return session, review_image(session), None, (
         f"Undid the last edit. {len(session['polygons'])} specimens in the current review"
         + (f"; {remaining} more edit{'s' if remaining != 1 else ''} can be undone." if remaining else ".")
-    )
+    ), measurement_table(session, scale_um, pixels_per_meter)
 
 
-def edit(session, mode, event: gr.SelectData):
-    if not session or mode == REVIEW:
+def highlight(session, index, scale_um, pixels_per_meter):
+    """Highlight one specimen in the image and the table (None clears it)."""
+    session["selected"] = index
+    if index is None:
+        status = "No specimen selected."
+    else:
+        status = f"Specimen {index + 1} is highlighted in the image and the table."
+    return session, review_image(session), status, measurement_table(session, scale_um, pixels_per_meter)
+
+
+def select_row(session, scale_um, pixels_per_meter, event: gr.SelectData):
+    if not session or not session["polygons"]:
         return gr.skip(), gr.skip(), gr.skip(), gr.skip()
+    row = event.index[0] if isinstance(event.index, (list, tuple)) else event.index
+    if row is None or not 0 <= row < len(session["polygons"]):
+        return gr.skip(), gr.skip(), gr.skip(), gr.skip()
+    return highlight(session, row, scale_um, pixels_per_meter)
+
+
+def refresh_table(session, scale_um, pixels_per_meter):
+    return measurement_table(session, scale_um, pixels_per_meter)
+
+
+def edit(session, mode, scale_um=None, pixels_per_meter=None, event: gr.SelectData = None):
+    skip = (gr.skip(),) * 5
+    if not session:
+        return skip
     x, y = event.index
     image = session["image"]
     if not (0 <= x < image.shape[1] and 0 <= y < image.shape[0]):
-        return gr.skip(), gr.skip(), gr.skip(), gr.skip()
+        return skip
     polygons = session["polygons"]
+    if mode == REVIEW:
+        from shapely.geometry import Point
+
+        hits = [i for i, polygon in enumerate(polygons) if polygon.covers(Point(x, y))]
+        session, preview, status, table = highlight(
+            session, hits[-1] if hits else None, scale_um, pixels_per_meter)
+        return session, preview, gr.skip(), status, table
     if mode == CALIBRATE:
         points = session["points"]
         if len(points) != 1:
@@ -199,7 +327,7 @@ def edit(session, mode, event: gr.SelectData):
             remember(session)
             polygons.append(polygon)
         status = f"{len(polygons)} specimens in the current review."
-    return session, review_image(session), None, status
+    return session, review_image(session), None, status, measurement_table(session, scale_um, pixels_per_meter)
 
 
 def positive(value, label):
@@ -282,6 +410,7 @@ def build_app():
             with gr.Column(scale=3):
                 preview = gr.Image(label="Specimen masks", interactive=False, height=625, format="png")
                 status = gr.Textbox(label="Status", interactive=False)
+                table = gr.Dataframe(label="Measurements", interactive=False, max_height=400)
         with gr.Row():
             sample = gr.Textbox(label="Sample ID")
             species = gr.Textbox(label="Species")
@@ -290,9 +419,16 @@ def build_app():
         crops = gr.Checkbox(value=True, label="Include specimen crops and masks (ZIP). Untick to export only the measurements CSV.")
         save = gr.Button("Export", variant="primary")
         download = gr.File(label="Results", interactive=False)
-        run.click(segment, [upload, session], [session, preview, sample, scale, known, download, status], concurrency_id="workflow")
-        preview.select(edit, [session, mode], [session, preview, download, status], concurrency_id="workflow")
-        undo_button.click(undo, [session], [session, preview, download, status], concurrency_id="workflow")
+        run.click(segment, [upload, session], [session, preview, sample, scale, known, download, status, table],
+                  concurrency_id="workflow")
+        preview.select(edit, [session, mode, scale, known], [session, preview, download, status, table],
+                       concurrency_id="workflow")
+        undo_button.click(undo, [session, scale, known], [session, preview, download, status, table],
+                          concurrency_id="workflow")
+        table.select(select_row, [session, scale, known], [session, preview, status, table],
+                     concurrency_id="workflow")
+        for number in (scale, known):
+            number.input(refresh_table, [session, scale, known], [table], concurrency_id="workflow")
         save.click(export, [session, sample, species, depth, age, scale, known, crops], [session, download, status], concurrency_id="workflow")
         # Gradio's number boxes show an empty initial value as 0, which users
         # could export as a real depth or age. Clearing them on load shows
