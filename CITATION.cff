@@ -15,7 +15,7 @@ authors:
     family-names: Ojo
     orcid: "https://orcid.org/0000-0001-7956-9125"
     affiliation: "Institute for Geophysics, Jackson School of Geosciences, The University of Texas at Austin"
-version: 0.1.0
+version: 0.2.0
 date-released: "2026-11-26"
 license: Apache-2.0
 doi: 10.5281/zenodo.24554300

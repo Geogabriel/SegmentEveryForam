@@ -11,7 +11,7 @@ foraminiferal image segmentation and analysis.
 
 setuptools.setup(
     name="segmenteveryforam",
-    version="0.1.0",
+    version="0.2.0",
     author="Gabriel Ojo",
     description="A U-Net and SAM-based package for segmenting foraminifera in images",
     keywords="foraminifera, micropaleontology, image segmentation, morphometrics, segment anything model",
