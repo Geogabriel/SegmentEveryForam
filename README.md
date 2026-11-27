@@ -203,6 +203,8 @@ Upload a PNG, JPEG, or TIFF and select **Run segmentation**, or click one of the
 
 The example images and their scale bars are listed in [`examples/examples.json`](examples/examples.json). An example with a stored mask file (`examples/<image name>.geojson`) opens without running the models. To create or refresh these files, run `python tools/make_example_masks.py` from the repository root on a machine with a CUDA GPU.
 
+The two example images contain both planktic and benthic foraminifera. The U-Net was fine-tuned only on planktic specimens, yet the benthic specimens in these images were segmented as well as the planktic ones; the only correction needed was removing two small false masks inside one specimen. Accuracy on benthic assemblages has not been measured systematically.
+
 ## Models
 
 SegmentEveryForam combines U-Net-based semantic segmentation with SAM 2.1-based instance segmentation.
