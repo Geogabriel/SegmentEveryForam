@@ -25,6 +25,9 @@ identifiers:
     value: 10.5281/zenodo.24554300
     description: Concept DOI for all versions of SegmentEveryForam
   - type: doi
+    value: 10.5281/zenodo.24573508
+    description: DOI for version 0.2.0
+  - type: doi
     value: 10.5281/zenodo.24554301
     description: DOI for version 0.1.0
 keywords:

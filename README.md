@@ -336,7 +336,7 @@ The software is archived on Zenodo. This DOI covers all versions and always reso
 
 Ojo, G. (2026). *SegmentEveryForam* [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.24554300
 
-To cite the exact version you used, use that release's DOI from the Zenodo record. For version 0.1.0, it is https://doi.org/10.5281/zenodo.24554301.
+To cite the exact version you used, use that release's DOI from the Zenodo record. For version 0.2.0, it is https://doi.org/10.5281/zenodo.24573508; for version 0.1.0, https://doi.org/10.5281/zenodo.24554301.
 
 Please also cite the Segmenteverygrain paper, on which SegmentEveryForam builds:
 
