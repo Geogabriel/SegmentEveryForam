@@ -1,5 +1,6 @@
 """Run the SegmentEveryForam browser interface on a GPU workstation."""
 
+import json
 import math
 import os
 import re
@@ -33,6 +34,9 @@ REVIEW = "Inspect masks"
 ADD = "Add a missed specimen"
 REMOVE = "Remove a mask"
 CALIBRATE = "Mark scale-bar endpoints"
+# Example images, with their scale bars and (optionally) stored masks, so
+# visitors can try the app without their own image.
+EXAMPLES_DIR = Path(__file__).resolve().parent / "examples"
 HIGHLIGHT = (255, 214, 0)
 # Columns shown in the measurement table: get_foram_morphometrics column,
 # heading, and whether the value is an area, a length or a ratio.
@@ -201,7 +205,33 @@ def clear_session(session):
         rmtree(session["directory"], ignore_errors=True)
 
 
-def segment(path, previous):
+def example_info():
+    """Read examples/examples.json: file name -> title and scale bar."""
+    try:
+        return json.loads((EXAMPLES_DIR / "examples.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def load_masks(path):
+    """Load polygons from a GeoJSON file written by save_masks."""
+    from shapely.geometry import shape
+
+    features = json.loads(Path(path).read_text(encoding="utf-8"))["features"]
+    return [shape(feature["geometry"]) for feature in features]
+
+
+def save_masks(polygons, path):
+    """Save polygons as a GeoJSON FeatureCollection in image pixel coordinates."""
+    from shapely.geometry import mapping
+
+    collection = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {"specimen": index}, "geometry": mapping(polygon)}
+        for index, polygon in enumerate(polygons, start=1)]}
+    Path(path).write_text(json.dumps(collection), encoding="utf-8")
+
+
+def segment(path, previous, polygons=None, points=(), scale_um=None):
     if not path:
         raise gr.Error("Upload a microscope image first.")
     path = Path(path)
@@ -210,16 +240,32 @@ def segment(path, previous):
     import segmenteveryforam as sef
 
     image = sef.load_image(str(path))
-    unet, sam = models()
-    polygons, _, _ = sef.predict_with_box_prompts(image, unet, sam)
-    session = {"image": image, "name": path.name, "polygons": polygons, "points": [], "history": [],
-               "selected": None, "directory": None}
+    if polygons is None:
+        unet, sam = models()
+        polygons, _, _ = sef.predict_with_box_prompts(image, unet, sam)
+    session = {"image": image, "name": path.name, "polygons": list(polygons),
+               "points": [tuple(point) for point in points], "history": [], "selected": None,
+               "directory": None}
     preview = review_image(session)
     clear_session(previous)
-    return session, preview, path.stem, None, None, None, (
-        f"Detected {len(polygons)} specimens. Click a mask to find it in the table, "
-        "or choose a review tool to edit masks or mark the scale bar."
-    ), measurement_table(session)
+    if scale_um:
+        status = (f"Detected {len(polygons)} specimens. The {scale_um:g} µm scale bar is already marked, "
+                  "so the table is in millimetres. Click a mask to find it in the table, "
+                  "or choose a review tool to edit masks.")
+    else:
+        status = (f"Detected {len(polygons)} specimens. Click a mask to find it in the table, "
+                  "or choose a review tool to edit masks or mark the scale bar.")
+    return (session, preview, path.stem, scale_um, None, None, status,
+            measurement_table(session, scale_um))
+
+
+def run_example(path, previous):
+    """Open an example image with its scale bar, using stored masks if there are any."""
+    path = Path(path)
+    info = example_info().get(path.name, {})
+    stored = EXAMPLES_DIR / f"{path.stem}.geojson"
+    polygons = load_masks(stored) if stored.exists() else None
+    return segment(path, previous, polygons, info.get("scale_bar_px", ()), info.get("scale_bar_um"))
 
 
 UNDO_LIMIT = 50
@@ -265,7 +311,18 @@ def select_row(session, scale_um, pixels_per_meter, event: gr.SelectData):
     return highlight(session, row, scale_um, pixels_per_meter)
 
 
+def check_scale_length(session, scale_um):
+    """Warn when the printed length typed in equals the bar's length in pixels."""
+    points = session["points"] if session else []
+    if len(points) == 2 and valid_number(scale_um) and abs(scale_um - math.dist(*points)) < 1:
+        gr.Warning(
+            f"{scale_um:g} µm is the scale bar's length in pixels. Enter the length printed on "
+            "the bar instead (for example 500). If the bar really is labelled "
+            f"{scale_um:g} µm, ignore this message.", duration=15)
+
+
 def refresh_table(session, scale_um, pixels_per_meter):
+    check_scale_length(session, scale_um)
     return measurement_table(session, scale_um, pixels_per_meter)
 
 
@@ -298,6 +355,7 @@ def edit(session, mode, scale_um=None, pixels_per_meter=None, event: gr.SelectDa
             points.append((x, y))
             status = (f"Scale bar spans {math.dist(*points):.1f} pixels. "
                       "Enter its printed length in Printed scale-bar length (µm).")
+            check_scale_length(session, scale_um)
     else:
         from shapely.geometry import Point, Polygon
 
@@ -344,6 +402,7 @@ def export(session, sample, species, depth, age, scale_um, pixels_per_meter, cro
             raise gr.Error("Mark both scale-bar endpoints or enter a known calibration in pixels per meter.")
         bar_px = math.dist(*session["points"])
         scale_um = positive(scale_um, "scale-bar length")
+        check_scale_length(session, scale_um)
         pixels_per_meter = bar_px / (scale_um * 1e-6)
         scale_note = f"Scale bar: {bar_px:.1f} px = {scale_um:g} µm. "
     else:
@@ -403,6 +462,15 @@ def build_app():
             with gr.Column(scale=1):
                 upload = gr.File(label="Microscope image", file_types=[".png", ".jpeg", ".jpg", ".tif", ".tiff"])
                 run = gr.Button("Run segmentation", variant="primary")
+                examples = {name: info for name, info in example_info().items()
+                            if (EXAMPLES_DIR / name).exists()}
+                if examples:
+                    # A hidden image component makes the examples show as
+                    # thumbnails; choosing one opens it with its scale bar.
+                    example_image = gr.Image(type="filepath", visible=False)
+                    example_picker = gr.Examples(
+                        [[str(EXAMPLES_DIR / name)] for name in examples], [example_image],
+                        label="Or try an example (click a picture)", examples_per_page=len(examples))
                 mode = gr.Radio([REVIEW, ADD, REMOVE, CALIBRATE], value=REVIEW, label="Review tool")
                 undo_button = gr.Button("Undo last edit")
                 scale = gr.Number(label="Printed scale-bar length (µm)", value=None)
@@ -421,6 +489,11 @@ def build_app():
         download = gr.File(label="Results", interactive=False)
         run.click(segment, [upload, session], [session, preview, sample, scale, known, download, status, table],
                   concurrency_id="workflow")
+        if examples:
+            example_picker.load_input_event.then(
+                lambda path: path, [example_image], [upload]).then(
+                run_example, [example_image, session],
+                [session, preview, sample, scale, known, download, status, table], concurrency_id="workflow")
         preview.select(edit, [session, mode, scale, known], [session, preview, download, status, table],
                        concurrency_id="workflow")
         undo_button.click(undo, [session, scale, known], [session, preview, download, status, table],

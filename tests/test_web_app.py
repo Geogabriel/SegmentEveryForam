@@ -116,3 +116,76 @@ class TestWebAppMeasurementTable(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestWebAppExamples(unittest.TestCase):
+
+    def setUp(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from PIL import Image
+
+        self.directory = tempfile.TemporaryDirectory()
+        self.examples = Path(self.directory.name)
+        Image.new('RGB', (300, 200), 'black').save(self.examples / 'sample.png')
+        (self.examples / 'examples.json').write_text(json.dumps({'sample.png': {
+            'title': 'Sample', 'scale_bar_px': [[10, 190], [110, 190]], 'scale_bar_um': 200}}))
+        self.original = web_app.EXAMPLES_DIR
+        web_app.EXAMPLES_DIR = self.examples
+
+    def tearDown(self):
+        web_app.EXAMPLES_DIR = self.original
+        self.directory.cleanup()
+
+    def test_masks_round_trip(self):
+        polygons = [shapely.box(10, 10, 60, 60), shapely.Point(150, 100).buffer(30)]
+        web_app.save_masks(polygons, self.examples / 'sample.geojson')
+        loaded = web_app.load_masks(self.examples / 'sample.geojson')
+        self.assertEqual(len(loaded), 2)
+        self.assertTrue(loaded[0].equals(polygons[0]))
+
+    def test_example_with_stored_masks_needs_no_models(self):
+        web_app.save_masks([shapely.box(10, 10, 60, 60)], self.examples / 'sample.geojson')
+        original_models = web_app.models
+        web_app.models = lambda: self.fail('the models should not run')
+        try:
+            session, _, sample, scale, known, download, status, table = web_app.run_example(
+                str(self.examples / 'sample.png'), None)
+        finally:
+            web_app.models = original_models
+        self.assertEqual(len(session['polygons']), 1)
+        self.assertEqual(session['points'], [(10, 190), (110, 190)])
+        self.assertEqual(sample, 'sample')
+        self.assertEqual(scale, 200)
+        self.assertIn('200 µm scale bar is already marked', status)
+        self.assertIn('Area (mm²)', table.value['headers'])
+
+    def test_listed_examples_exist(self):
+        web_app.EXAMPLES_DIR = self.original
+        info = web_app.example_info()
+        self.assertTrue(info)
+        for name, details in info.items():
+            self.assertTrue((self.original / name).exists(), name)
+            self.assertEqual(len(details['scale_bar_px']), 2)
+            self.assertGreater(details['scale_bar_um'], 0)
+
+
+class TestScaleLengthWarning(unittest.TestCase):
+
+    def session(self):
+        return {'points': [(0, 0), (265, 0)]}
+
+    def warnings(self, scale_um):
+        from unittest import mock
+        with mock.patch.object(web_app.gr, 'Warning') as warning:
+            web_app.check_scale_length(self.session(), scale_um)
+        return warning.call_count
+
+    def test_pixel_length_warns(self):
+        self.assertEqual(self.warnings(265), 1)
+        self.assertEqual(self.warnings(265.4), 1)
+
+    def test_printed_length_does_not_warn(self):
+        self.assertEqual(self.warnings(500), 0)
+        self.assertEqual(self.warnings(None), 0)
