@@ -1,11 +1,11 @@
 {
-  "benthic_forams.jpg": {
-    "title": "Benthic foraminifera",
+  "forams_example_1.jpg": {
+    "title": "Planktic and benthic foraminifera, example 1",
     "scale_bar_px": [[1523, 1155], [1655, 1155]],
     "scale_bar_um": 200
   },
-  "planktonic_benthic_forams.jpg": {
-    "title": "Planktonic and benthic foraminifera",
+  "forams_example_2.jpg": {
+    "title": "Planktic and benthic foraminifera, example 2",
     "scale_bar_px": [[1728.5, 100], [1861.5, 100]],
     "scale_bar_um": 200
   }
