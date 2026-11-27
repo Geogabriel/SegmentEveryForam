@@ -285,5 +285,71 @@ class TestDownscaledGrainPlot(unittest.TestCase):
         self.assertTrue((testxy == plotxy).all())
 
 
+class TestUndo(unittest.TestCase):
+    ''' Undo restores grains after add, delete, and merge edits. '''
+
+    def setUp(self):
+        self.image = np.zeros((200, 200, 3), dtype=np.uint8)
+        squares = [shapely.box(10, 10, 50, 50), shapely.box(40, 10, 80, 50),
+                   shapely.box(120, 120, 160, 160)]
+        self.grains = [sfi.Grain(np.array(sq.exterior.xy), self.image) for sq in squares]
+        self.plot = sfi.ForamPlot(list(self.grains), self.image, blit=False)
+
+    def tearDown(self):
+        plt.close(self.plot.fig)
+
+    def select(self, *grains):
+        for grain in grains:
+            grain.select()
+        self.plot.selected_grains = list(grains)
+
+    def test_nothing_to_undo(self):
+        self.assertFalse(self.plot.undo())
+        self.assertEqual(self.plot.grains, self.grains)
+
+    def test_undo_delete_restores_order(self):
+        self.select(self.grains[0], self.grains[1])
+        self.plot.delete_grains()
+        self.assertEqual(self.plot.grains, [self.grains[2]])
+        self.assertTrue(self.plot.undo())
+        self.assertEqual(self.plot.grains, self.grains)
+        for grain in self.plot.grains:
+            self.assertFalse(grain.selected)
+            self.assertIn(grain.patch, self.plot.ax.patches)
+
+    def test_undo_merge(self):
+        self.select(self.grains[0], self.grains[1])
+        merged = self.plot.merge_grains()
+        self.assertEqual(self.plot.grains, [self.grains[2], merged])
+        self.assertEqual(len(self.plot.history), 1)
+        self.plot.undo()
+        self.assertEqual(self.plot.grains, self.grains)
+        self.assertNotIn(merged.patch, self.plot.ax.patches)
+
+    def test_undo_create(self):
+        original = sfi.predict_from_prompts
+        sfi.predict_from_prompts = lambda **kwargs: shapely.box(100, 20, 140, 60).exterior.xy
+        try:
+            self.plot.set_point((120, 40))
+            new_grain = self.plot.create_grain()
+        finally:
+            sfi.predict_from_prompts = original
+        self.assertIs(self.plot.grains[-1], new_grain)
+        self.plot.undo()
+        self.assertEqual(self.plot.grains, self.grains)
+
+    def test_undo_steps_back_in_order(self):
+        self.select(self.grains[2])
+        self.plot.delete_grains()
+        self.select(self.grains[0], self.grains[1])
+        merged = self.plot.merge_grains()
+        self.plot.undo()
+        self.assertEqual(self.plot.grains, self.grains[:2])
+        self.plot.undo()
+        self.assertEqual(self.plot.grains, self.grains)
+        self.assertFalse(self.plot.undo())
+        self.assertIsNotNone(merged)
+
+
 if __name__ == '__main__':
     unittest.main()

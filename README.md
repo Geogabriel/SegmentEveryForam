@@ -199,7 +199,7 @@ python web_app.py
 
 Open the local URL printed in the terminal. This launch listens on localhost. The app runs Keras on PyTorch unless `KERAS_BACKEND` is already set.
 
-Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downloads both model checkpoints. To edit the numbered overlay, select a review tool, then click a mask to remove it or click a missed specimen to add it. For calibration, select **Mark scale-bar endpoints**, click both ends of the scale bar, and enter its printed length in micrometers, or enter a known calibration in pixels per meter. Select **Export** and download the results: a ZIP with the measurements, specimen crops and masks, or, with **Include specimen crops and masks** unticked, only the measurements CSV.
+Upload a PNG, JPEG, or TIFF and select **Run segmentation**. The first run downloads both model checkpoints. To edit the numbered overlay, select a review tool, then click a mask to remove it or click a missed specimen to add it. **Undo last edit** reverses the most recent edit, including scale-bar clicks. For calibration, select **Mark scale-bar endpoints**, click both ends of the scale bar, and enter its printed length in micrometers, or enter a known calibration in pixels per meter. Select **Export** and download the results: a ZIP with the measurements, specimen crops and masks, or, with **Include specimen crops and masks** unticked, only the measurements CSV.
 
 ## Models
 
@@ -291,7 +291,7 @@ Current interactive controls include:
 - **D:** Delete selected foram segmentations
 - **A:** Add or merge selected touching foram segments
 - **M:** Legacy shortcut for merging selected segments
-- **Z:** Remove the most recently created segmentation
+- **Z:** Undo the last add, delete, or merge (press again to step further back)
 - **H:** Toggle the coverage mask
 - **Esc:** Clear selections and prompts
 - **Ctrl (hold):** Temporarily hide selected masks

@@ -119,11 +119,33 @@ def segment(path, previous):
     image = sef.load_image(str(path))
     unet, sam = models()
     polygons, _, _ = sef.predict_with_box_prompts(image, unet, sam)
-    session = {"image": image, "name": path.name, "polygons": polygons, "points": [], "directory": None}
+    session = {"image": image, "name": path.name, "polygons": polygons, "points": [], "history": [],
+               "directory": None}
     preview = review_image(session)
     clear_session(previous)
     return session, preview, path.stem, None, None, None, (
         f"Detected {len(polygons)} specimens. Choose a review tool to edit masks or mark the scale bar."
+    )
+
+
+UNDO_LIMIT = 50
+
+
+def remember(session):
+    """Save the masks and scale-bar points before an edit so it can be undone."""
+    history = session.setdefault("history", [])
+    history.append((list(session["polygons"]), list(session["points"])))
+    del history[:-UNDO_LIMIT]
+
+
+def undo(session):
+    if not session or not session.get("history"):
+        raise gr.Error("There is nothing to undo.")
+    session["polygons"], session["points"] = session["history"].pop()
+    remaining = len(session["history"])
+    return session, review_image(session), None, (
+        f"Undid the last edit. {len(session['polygons'])} specimens in the current review"
+        + (f"; {remaining} more edit{'s' if remaining != 1 else ''} can be undone." if remaining else ".")
     )
 
 
@@ -138,11 +160,13 @@ def edit(session, mode, event: gr.SelectData):
     if mode == CALIBRATE:
         points = session["points"]
         if len(points) != 1:
+            remember(session)
             session["points"] = [(x, y)]
             status = "Click the other end of the scale bar."
         elif (x, y) == points[0]:
             raise gr.Error("Choose a different point for the other end of the scale bar.")
         else:
+            remember(session)
             points.append((x, y))
             status = (f"Scale bar spans {math.dist(*points):.1f} pixels. "
                       "Enter its printed length in Printed scale-bar length (µm).")
@@ -154,6 +178,7 @@ def edit(session, mode, event: gr.SelectData):
         if mode == REMOVE:
             if not hits:
                 raise gr.Error("Click inside the mask you want to remove.")
+            remember(session)
             polygons.pop(hits[-1])
         else:
             if hits:
@@ -171,6 +196,7 @@ def edit(session, mode, event: gr.SelectData):
                 polygon = max(polygon.geoms, key=lambda part: part.area)
             if polygon.geom_type != "Polygon" or polygon.is_empty or not polygon.covers(point):
                 raise gr.Error("SAM did not find a specimen containing that point.")
+            remember(session)
             polygons.append(polygon)
         status = f"{len(polygons)} specimens in the current review."
     return session, review_image(session), None, status
@@ -250,6 +276,7 @@ def build_app():
                 upload = gr.File(label="Microscope image", file_types=[".png", ".jpeg", ".jpg", ".tif", ".tiff"])
                 run = gr.Button("Run segmentation", variant="primary")
                 mode = gr.Radio([REVIEW, ADD, REMOVE, CALIBRATE], value=REVIEW, label="Review tool")
+                undo_button = gr.Button("Undo last edit")
                 scale = gr.Number(label="Printed scale-bar length (µm)", value=None)
                 known = gr.Number(label="Known calibration (pixels per meter, optional override)", value=None)
             with gr.Column(scale=3):
@@ -265,6 +292,7 @@ def build_app():
         download = gr.File(label="Results", interactive=False)
         run.click(segment, [upload, session], [session, preview, sample, scale, known, download, status], concurrency_id="workflow")
         preview.select(edit, [session, mode], [session, preview, download, status], concurrency_id="workflow")
+        undo_button.click(undo, [session], [session, preview, download, status], concurrency_id="workflow")
         save.click(export, [session, sample, species, depth, age, scale, known, crops], [session, download, status], concurrency_id="workflow")
         # Gradio's number boxes show an empty initial value as 0, which users
         # could export as a real depth or age. Clearing them on load shows

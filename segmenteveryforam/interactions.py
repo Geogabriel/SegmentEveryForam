@@ -206,6 +206,7 @@ class Grain(object):
         # Remove axes, if drawn
         for a in self.axes:
             a.remove()
+        self.axes = []
 
     def select(self) -> bool:
         '''
@@ -321,7 +322,7 @@ class ForamPlot(object):
     - Ctrl (hold): Hide all grain segmentations temporarily
     - C: Create grain from existing prompts (alternative to auto-create)
     - D/Delete: Delete selected grains
-    - Z: Undo last created grain
+    - Z: Undo the last add, delete, or merge
     - Escape: Clear all selections and prompts
     '''
 
@@ -398,8 +399,11 @@ class ForamPlot(object):
         self.last_pick = (0, 0)
         self.points = []
         self.point_labels = []
-        self.created_grains = []
         self.selected_grains = []
+        # Undo history: one (added, removed) entry per edit, where `added` is
+        # a list of new grains and `removed` a list of (index, grain) pairs
+        # giving each removed grain's former position in self.grains.
+        self.history = []
 
         # Plot
         self.blit = blit
@@ -536,15 +540,15 @@ class ForamPlot(object):
         '''
         try:
             # Get the colormap
-            cmap = plt.cm.get_cmap(cmap_name)
+            cmap = mpl.colormaps[cmap_name]
             # Generate random indices for variety (similar to plot_image_w_colorful_grains)
             color_indices = np.random.randint(0, cmap.N, n_grains)
             colors = [cmap(i) for i in color_indices]
             return colors
-        except ValueError:
+        except (KeyError, ValueError):
             # If colormap name is invalid, fall back to default
             logger.warning(f'Unknown colormap "{cmap_name}", using "{DEFAULT_COLORMAP}"')
-            cmap = plt.cm.get_cmap(DEFAULT_COLORMAP)
+            cmap = mpl.colormaps[DEFAULT_COLORMAP]
             color_indices = np.random.randint(0, cmap.N, n_grains)
             colors = [cmap(i) for i in color_indices]
             return colors
@@ -569,7 +573,7 @@ class ForamPlot(object):
         '''
         try:
             # Get the colormap
-            cmap = plt.cm.get_cmap(cmap_name)
+            cmap = mpl.colormaps[cmap_name]
             
             # Extract property values from grains
             # First ensure all grains are measured
@@ -601,7 +605,7 @@ class ForamPlot(object):
             
             return colors
             
-        except ValueError as e:
+        except (KeyError, ValueError) as e:
             # If colormap name is invalid, fall back to random colors
             logger.warning(f'Error generating colors by property: {e}, using random colors')
             return self._generate_colors(len(grains), DEFAULT_COLORMAP)
@@ -1001,19 +1005,31 @@ class ForamPlot(object):
             self.update()
             return None
         
-        # Scale and record new grain (on plot, data, and undo list)
+        # Scale and record new grain (on plot, data, and undo history)
         new_grain = Grain(coords, self.image)
         new_grain.draw_patch(self.ax, self.scale, animated=self.blit)
         self.grains.append(new_grain)
-        self.created_grains.append(new_grain)
+        self.history.append(([new_grain], []))
         # Clear prompts and update background
         self.clear_all()
         if self.blit:
             self.canvas.draw()
         return new_grain
 
-    def delete_grains(self):
-        ''' Delete all selected grains. '''
+    def delete_grains(self, record: bool = True) -> list:
+        '''
+        Delete all selected grains.
+
+        Parameters
+        ----------
+        record : bool, default True
+            Whether to add the deletion to the undo history as its own edit.
+
+        Returns
+        -------
+        removed : list of (int, Grain)
+            Each deleted grain with its former index in the grain list.
+        '''
         # If no individual grains are selected...
         if len(self.selected_grains) < 1:
             # Use any grains that are wholly contained in the box selector
@@ -1025,17 +1041,22 @@ class ForamPlot(object):
                     g for g in self.grains if box.contains(g.polygon)]
             # Otherwise, exit since no grains have been indicated for deletion
             else:
-                return
-        # Remove selected grains from plot, data, and undo list
-        for grain in self.selected_grains:
+                return []
+        # Remove selected grains from plot and data, remembering where each
+        # one was so that undo can put it back in the same place
+        removed = sorted(
+            ((self.grains.index(g), g) for g in self.selected_grains if g in self.grains),
+            key=lambda pair: pair[0])
+        for _, grain in removed:
             grain.erase()
             self.grains.remove(grain)
-            if grain in self.created_grains:
-                self.created_grains.remove(grain)
+        if record and removed:
+            self.history.append(([], removed))
         # Clear any prompts (assumed accidental) and update background
         self.clear_all()
         if self.blit:
             self.canvas.draw()
+        return removed
 
     def hide_grains(self, hide: bool = True):
         ''' 
@@ -1132,21 +1153,42 @@ class ForamPlot(object):
         new_grain = Grain(poly.exterior.xy, self.image)
         new_grain.draw_patch(self.ax, self.scale, animated=self.blit)
         self.grains.append(new_grain)
-        self.created_grains.append(new_grain)
-        # Delete old constituent grains (since they are still selected)
-        self.delete_grains()
+        # Delete old constituent grains (since they are still selected) and
+        # record the merge as one edit
+        removed = self.delete_grains(record=False)
+        self.history.append(([new_grain], removed))
         return new_grain
 
-    def undo_grain(self):
-        ''' Remove latest created grain. '''
-        # TODO: Also allow undoing grain deletions
-        # Verify that there is a grain to undo
-        if len(self.created_grains) < 1:
-            return
-        # Select and remove latest grain
+    def undo(self) -> bool:
+        '''
+        Undo the most recent add, delete, or merge.
+
+        Returns
+        -------
+        undone : bool
+            True if an edit was undone, False if there was nothing to undo.
+        '''
+        if not self.history:
+            return False
+        added, removed = self.history.pop()
         self.clear_all()
-        self.selected_grains = [self.created_grains[-1]]
-        self.delete_grains()
+        # Remove grains the edit created
+        for grain in added:
+            if grain in self.grains:
+                grain.erase()
+                self.grains.remove(grain)
+        # Redraw grains the edit removed, at their former positions
+        for index, grain in removed:
+            grain.selected = False
+            grain.draw_patch(self.ax, self.scale, animated=self.blit)
+            self.grains.insert(min(index, len(self.grains)), grain)
+        if self.blit:
+            self.canvas.draw()
+        return True
+
+    def undo_grain(self):
+        ''' Undo the most recent edit (kept for backward compatibility). '''
+        return self.undo()
 
     # Events -----------------------------------------------------------------
     def onclick(self, event: mpl.backend_bases.MouseEvent):
@@ -1291,7 +1333,7 @@ class ForamPlot(object):
         h: Toggle coverage mask (highlights unsegmented areas in red).
         a: Add selected foram segments into one foram.
         m: Legacy shortcut for adding selected foram segments.
-        z: Undo the most recently created grain.
+        z: Undo the most recent add, delete, or merge.
         control (hold): Temporarily hide all grains.
         escape: Remove all selections, prompts, and info.
         shift: Activate scale bar selector and grain selection box.
@@ -1324,7 +1366,7 @@ class ForamPlot(object):
             # 'm' is retained as a legacy shortcut.
             self.merge_grains()
         elif key == 'z':
-            self.undo_grain()
+            self.undo()
         elif key == 'control':
             self.ctrl_down = True
             self.hide_grains()
