@@ -10,6 +10,26 @@ SegmentEveryForam was created from
 point, see the
 [Segmenteverygrain changelog](https://github.com/zsylvester/segmenteverygrain/blob/main/CHANGELOG.md).
 
+## [Unreleased]
+
+### Added
+
+- The browser prototype has an **Undo last edit** button that reverses
+  added or removed masks and scale-bar clicks, up to 50 steps back.
+
+### Changed
+
+- **Z** in the `ForamPlot` editor now undoes the most recent add, delete or
+  merge, and can be pressed repeatedly. Before, it only removed the most
+  recently added mask, so a deleted or merged mask could not be restored.
+  Restored masks keep their original numbering order.
+
+### Fixed
+
+- The `ForamPlot` editor and `plot_image_w_colorful_grains` no longer fail
+  on newer Matplotlib releases (tested with 3.11), which no longer provide
+  `matplotlib.cm.get_cmap`.
+
 ## [0.2.0] - 2026-11-26
 
 ### Added
