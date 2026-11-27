@@ -19,7 +19,9 @@ point, see the
   segmentation**. An example opens with its 200 µm scale bar marked, so the
   table is in millimetres at once. If masks for it are stored in
   `examples/<image name>.geojson`, it opens without running the models;
-  `tools/make_example_masks.py` creates these files.
+  `tools/make_example_masks.py` creates these files. Both examples ship
+  with stored masks, checked by eye; two false masks inside one benthic
+  specimen were removed.
 - The browser prototype warns when the printed scale-bar length entered is
   the same as the bar's length in pixels, a likely mix-up.
 - The browser prototype has an **Undo last edit** button that reverses
