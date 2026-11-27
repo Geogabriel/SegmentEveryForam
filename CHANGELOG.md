@@ -10,7 +10,7 @@ SegmentEveryForam was created from
 point, see the
 [Segmenteverygrain changelog](https://github.com/zsylvester/segmenteverygrain/blob/main/CHANGELOG.md).
 
-## [Unreleased]
+## [0.2.0] - 2026-11-26
 
 ### Added
 
@@ -73,6 +73,8 @@ point, see the
   image, so they are legible on large microscope images.
 - Browser prototype: Depth, Age and the calibration fields start blank
   instead of showing 0, and blank fields are exported as missing values.
+- `filter_grains_by_props()` used a variable before assigning it, so every
+  call failed.
 
 ## [0.1.0] - 2026-11-26
 
@@ -124,4 +126,5 @@ First release of SegmentEveryForam.
 - The Segmenteverygrain JOSS paper sources (`paper/`) and the workflow that
   built them. The paper is cited in the README and `CITATION.cff`.
 
+[0.2.0]: https://github.com/Geogabriel/SegmentEveryForam/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Geogabriel/SegmentEveryForam/releases/tag/v0.1.0
